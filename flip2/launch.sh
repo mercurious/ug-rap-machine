@@ -27,9 +27,10 @@ if python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:$
   echo "something already answers on port $PORT; is the rap machine running?" | tee -a "$LOG" >&2; exit 1
 fi
 
-SRV=""; FFL=""; AIPIDS=""
+SRV=""; FFL=""; AIPIDS=""; BOOST=""
 cleanup() {
   trap - EXIT INT TERM HUP
+  [ -n "$BOOST" ] && kill "$BOOST" 2>/dev/null
   [ -n "$FFL" ] && kill "$FFL" 2>/dev/null
   [ -n "$SRV" ] && kill "$SRV" 2>/dev/null
   [ -n "$SRV" ] && wait "$SRV" 2>/dev/null
@@ -41,18 +42,20 @@ trap cleanup EXIT
 trap 'exit 130' INT TERM HUP
 
 # MC mode: the language model and the voice, from the llamatalk kit that Retro Voice Chat installs.
-# Same core pinning as that app (SM8250: 0-3 little, 4-7 big): LLM generates on 4-5 and reads the
-# prompt on 4-7, TTS on 6-7 at nice -10. Different ports from Retro Voice Chat so both can be installed.
+# SM8250: 0-3 little, 4-6 big, 7 prime. The model and the voice run on 4-6 only, at low priority and
+# (the model) as a batch task, so the beat never waits for them: Firefox's audio graph, which also runs
+# the auto-tune worklet, keeps the prime core and gets a real-time slice (see audio_boost below).
+# Different ports from Retro Voice Chat so both can be installed.
 AI_ARGS=""
 if [ -n "${URM_AI:-}" ]; then
   LT=${URM_LLAMATALK:-/storage/games-external/retro-voice-chat/llamatalk}
   M=${URM_MODELS:-$("$LT/models.sh" path 2>/dev/null)}; M=${M:-/storage/games-external/models}
   LLM_PORT=${URM_LLM_PORT:-8096}; TTS_PORT=${URM_TTS_PORT:-8097}
   if [ "${URM_MODEL:-e4b}" = e2b ]; then
-    LLM_MODEL=gemma-4-E2B_q4_0-it; DRAFT=""; OMPENV="env -u OMP_PROC_BIND -u OMP_PLACES"; TB=2
+    LLM_MODEL=gemma-4-E2B_q4_0-it; DRAFT=""; OMPENV="env -u OMP_PROC_BIND -u OMP_PLACES"; TB=3
   else
     LLM_MODEL=gemma-4-E4B_q4_0-it; DRAFT="-md $M/mtp-gemma-4-E4B-it-Q4_0.gguf --spec-type draft-mtp"
-    OMPENV="env OMP_PROC_BIND=close OMP_PLACES={4},{5},{6},{7}"; TB=4
+    OMPENV="env OMP_PROC_BIND=close OMP_PLACES={4},{5},{6}"; TB=3
   fi
   missing=""
   for f in "$LT/bin/llama-server" "$LT/bin/tts-server" "$M/$LLM_MODEL.gguf" "$M/pocket-tts-english_2026-09-Q8_0.gguf" "$M/pocket-tts-english_2026-09-voices.gguf"; do
@@ -63,11 +66,11 @@ if [ -n "${URM_AI:-}" ]; then
   else
     [ -f "$M/mtp-gemma-4-E4B-it-Q4_0.gguf" ] || DRAFT=""
     ulimit -c 0
-    env GGML_BACKEND=CPU PT_THREADS=2 nice -n -10 taskset -c 6-7 "$LT/bin/tts-server" \
+    env GGML_BACKEND=CPU PT_THREADS=2 nice -n 5 taskset -c 4-6 "$LT/bin/tts-server" \
       --model "$M/pocket-tts-english_2026-09-Q8_0.gguf" --voices "$M/pocket-tts-english_2026-09-voices.gguf" \
       --voice "${URM_VOICE:-alba}" --host 127.0.0.1 --port "$TTS_PORT" >> "$APP/logs/tts.log" 2>&1 &
     AIPIDS="$AIPIDS $!"
-    $OMPENV taskset -c 4-7 "$LT/bin/llama-server" -m "$M/$LLM_MODEL.gguf" $DRAFT -dev none -t 2 -tb $TB -fa on \
+    $OMPENV nice -n 10 chrt -b 0 taskset -c 4-6 "$LT/bin/llama-server" -m "$M/$LLM_MODEL.gguf" $DRAFT -dev none -t 2 -tb $TB -fa on \
       -c 8192 -np 1 --jinja -rea off --cache-ram 0 --host 127.0.0.1 --port "$LLM_PORT" >> "$APP/logs/llm.log" 2>&1 &
     AIPIDS="$AIPIDS $!"
     AI_ARGS="--llm http://127.0.0.1:$LLM_PORT --tts http://127.0.0.1:$TTS_PORT --voice ${URM_VOICE:-alba}"
@@ -87,6 +90,26 @@ touch "$APP/.started"
 URL="http://127.0.0.1:$PORT/underground-rap-machine.html?flip${URM_REMOTE:+&remote}${AI_ARGS:+&mc}"
 "$FF/launch.sh" --kiosk "$URL" &
 FFL=$!
+
+# Firefox's audio graph threads (the beat, the vocal chain and the auto-tune worklet all render there)
+# get a real-time round-robin slice and the big cores, so the model's threads never make them wait
+# or push them onto the little cores. New graph threads appear whenever audio starts, so keep looking.
+audio_boost() {
+  while :; do
+    for p in $(pidof firefox-bin); do
+      for t in /proc/"$p"/task/*; do
+        case "$(cat "$t/comm" 2>/dev/null)" in
+          MediaTrackGrph|GraphRunner|AudioIP*allback|cubeb*|NativeAudio*)
+            [ "$(awk '{print $41}' "$t/stat" 2>/dev/null)" = 2 ] && continue
+            chrt -r -p 5 "${t##*/}" 2>/dev/null && taskset -p -c 4-7 "${t##*/}" >/dev/null 2>&1 ;;
+        esac
+      done
+    done
+    sleep 3
+  done
+}
+audio_boost &
+BOOST=$!
 
 # The house launcher loads its own InputPlumber profile before it starts Firefox and writes the pid
 # file after; ours goes in once that file is newer than this launch.
