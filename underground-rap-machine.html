@@ -252,7 +252,28 @@ html.flip{background:var(--ground)}
 .flip .views{display:flex;gap:6px;align-items:center}
 .flip .views .view{flex:0 0 auto;padding:9px 16px}
 .flip .vk{font:600 10px/1 var(--f-mono);color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:3px 5px}
-.flip .fstat{margin-left:auto;display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.12em}
+/* battery gauge and model speedo, between the view buttons and the status chips */
+.flip .sys{margin-left:auto;display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.06em;color:var(--dim)}
+.flip .sys [hidden]{display:none!important}
+.flip .sys .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid var(--line);border-radius:4px;height:21px;box-sizing:border-box}
+.flip .sys small{font-size:9px;color:var(--faint)}
+.flip .sys .bi{position:relative;width:18px;height:9px;border:1px solid var(--dim);border-radius:2px;box-sizing:border-box}
+.flip .sys .bi::after{content:"";position:absolute;right:-3px;top:2px;width:2px;height:3px;background:var(--dim);border-radius:0 1px 1px 0}
+.flip .sys .bi b{position:absolute;left:1px;top:1px;bottom:1px;width:0;background:var(--acc-2);border-radius:1px}
+.flip .sys .bat.low .bi b{background:var(--warn)}
+.flip .sys .bat.crit .bi b{background:var(--rec)}
+.flip .sys .bat.crit{animation:blink 1.6s infinite}
+.flip .sys .bolt{width:7px;height:11px;fill:var(--acc-2)}
+.flip .sys .bat.chg .bi b{animation:fillpulse 2s infinite}
+@keyframes fillpulse{50%{opacity:.45}}
+.flip .sys .throb{display:inline-flex;gap:2px}
+.flip .sys .throb b{width:4px;height:4px;border-radius:50%;background:var(--acc);animation:throb 1s infinite}
+.flip .sys .throb b:nth-child(2){animation-delay:.2s}.flip .sys .throb b:nth-child(3){animation-delay:.4s}
+@keyframes throb{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1.1)}}
+.flip .sys .spd{position:relative;width:30px;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.flip .sys .spd b{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--acc-2),var(--acc));transition:width .5s}
+.flip .sys .llm.busy{color:var(--acc);border-color:var(--acc)}
+.flip .fstat{display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.12em}
 .flip .fstat b{color:var(--acc);font-weight:600;padding:5px 8px;border:1px solid var(--line);border-radius:4px}
 .flip .fstat i{font-style:normal;color:var(--faint);padding:5px 8px;border:1px solid var(--line);border-radius:4px}
 .flip .fstat i.on{color:var(--ink);background:var(--acc-2);border-color:var(--acc-2)}
@@ -373,6 +394,10 @@ html.flip{background:var(--ground)}
     <button class="btn view" data-view="mix" aria-pressed="false">Mix</button>
     <button class="btn view" data-view="mc" aria-pressed="false">MC</button>
     <span class="vk">R1</span>
+    <span class="sys" id="sys" hidden aria-live="off">
+      <span class="chip bat" id="sys-bat" hidden title="Battery"><i class="bi"><b id="sys-fill"></b></i><svg class="bolt" id="sys-bolt" viewBox="0 0 8 12" aria-label="charging" hidden><path d="M5 0 0 7h3l-1 5 6-7H5z"/></svg><span id="sys-pct">—</span><small id="sys-w"></small></span>
+      <span class="chip llm" id="sys-llm" hidden title="Gemma"><i class="throb" id="sys-throb" hidden><b></b><b></b><b></b></i><span id="sys-llm-t">gemma</span><i class="spd" id="sys-spd" hidden><b></b></i></span>
+    </span>
     <span class="fstat"><b id="fs-scene">HOOK</b><i id="fs-mic">MIC</i><i id="fs-rec">REC</i><i id="fs-led">LED</i></span>
   </nav>
 
@@ -2363,6 +2388,43 @@ function initFlip() {
   // a touched button must not keep focus, or Start (Space) would press it again instead of play/stop
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) b.blur(); });
   if (REMOTE) { remoteLoop(); setInterval(postStatus, 1000); addEventListener('error', e => { lastErr = String(e.message || e); }); }
+  sysTick(); setInterval(sysTick, 2000);
+}
+/* battery gauge and Gemma speedo in the views row, fed by GET /sys on the bridge */
+const SYS_DEMO = (location.search.match(/[?&]sysdemo=(\w+)/) || [])[1];   // &sysdemo=writing|prompt|tts|low renders a sample state
+async function sysTick() {
+  let d;
+  try { d = await (await fetch('/sys', { cache: 'no-store' })).json(); } catch (e) { $('#sys').hidden = true; return; }
+  if (SYS_DEMO) {
+    d.bat = { pct: SYS_DEMO === 'low' ? 9 : 63, status: SYS_DEMO === 'low' ? 'Discharging' : 'Charging', w: 4.2 };
+    d.llm = true; d.ai = { prompt: { phase: 'prompt' }, writing: { phase: 'writing', tokens: 212, secs: 48, tps: 4.4 } }[SYS_DEMO] || { phase: 'done', tokens: 343, secs: 68 };
+    d.tts = SYS_DEMO === 'tts' ? { busy: 1, x: 2.6 } : { busy: 0, x: 2.6 };
+  }
+  const bat = d.bat, B = $('#sys-bat');
+  B.hidden = !(bat && bat.pct != null);
+  if (!B.hidden) {
+    const chg = /charging|full/i.test(bat.status || '') && !/not charging|discharging/i.test(bat.status || '');
+    $('#sys-fill').style.width = `${clamp(bat.pct, 0, 100) * 0.14 + 1}px`;   // 14 px of travel inside the 18 px shell
+    $('#sys-pct').textContent = `${bat.pct}%`;
+    $('#sys-bolt').hidden = !chg;
+    $('#sys-w').textContent = bat.w != null && bat.w >= 0.1 ? `${bat.w.toFixed(1)}W` : '';
+    B.classList.toggle('chg', chg); B.classList.toggle('low', !chg && bat.pct <= 20); B.classList.toggle('crit', !chg && bat.pct <= 10);
+    B.title = `Battery ${bat.pct}% · ${bat.status || '?'}${bat.w ? ` · ${bat.w} W ${chg ? 'in' : 'out'}` : ''}`;
+  }
+  const L = $('#sys-llm'), ph = (d.ai || {}).phase, tts = d.tts || {};
+  L.hidden = !d.llm;
+  if (!L.hidden) {
+    let text = 'gemma', busy = true, throb = false, tps = null;
+    if (ph === 'prompt') { text = 'reading'; throb = true; }
+    else if (ph === 'writing') { tps = d.ai.tps || 0; text = `${tps.toFixed(1)} tok/s`; }
+    else if (tts.busy) { text = tts.x ? `singing ${tts.x.toFixed(1)}×` : 'singing'; throb = true; }
+    else { busy = false; if (ph === 'done' && d.ai.secs) text = `${(d.ai.tokens / d.ai.secs).toFixed(1)} tok/s`; else if (ph === 'error') text = 'gemma ✕'; }
+    $('#sys-llm-t').textContent = text; $('#sys-throb').hidden = !throb;
+    $('#sys-spd').hidden = tps == null; if (tps != null) $('#sys-spd b').style.width = `${clamp(tps / 12, 0, 1) * 100}%`;
+    L.classList.toggle('busy', busy);
+    L.title = ph === 'writing' ? `Gemma is writing: ${d.ai.tokens} tokens in ${Math.round(d.ai.secs)} s` : ph === 'prompt' ? 'Gemma is reading the beat' : tts.busy ? 'Pocket TTS is singing' : 'Gemma';
+  }
+  $('#sys').hidden = B.hidden && L.hidden;
 }
 const ledMul = (c, k) => c.map(x => Math.round(clamp(x * k, 0, 255)));
 function ledTick() {

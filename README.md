@@ -125,6 +125,8 @@ Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5"
 | Right stick + R2 | Pointer and tap |
 | Guide (Home) | Leave |
 
+**Gauges.** Between the view buttons and the status chips sit a battery gauge (fill, percentage, a bolt while charging, the watts going in or out) and a Gemma speedo: pulsing dots while the model reads the beat or Pocket TTS sings, a bar and tokens per second while it writes, the last speed when idle. Both come from `GET /sys` on the bridge every two seconds.
+
 **LED rings.** The ring around the left stick is the beat clock: one segment per beat in the lane's colour, the fill bar in the second colour, a slow breath when stopped. The ring around the right stick is a VU of your tuned voice, a red heartbeat while a take records, and a white flash on every pad hit. Frames go to the server at up to 30 per second only when something changed; the kernel's `multi_intensity` order is read from sysfs, not assumed.
 
 Plug in headphones: through the speakers the internal mic feeds back into the tuner. Takes download into Firefox's download folder on the device.

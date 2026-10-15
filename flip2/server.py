@@ -19,7 +19,8 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
                                                              also bridge Gemma (llama-server) and Pocket TTS
                                                              (tts-server) for the MC mode: POST /ai/plan asks the
                                                              model for a performance (JSON), POST /ai/tts sings a
-                                                             line, GET /ai/health and /ai/progress for the page
+                                                             line, GET /ai/health and /ai/progress for the page;
+  GET /sys                                                   battery and model activity for the views-row gauges
 
 The rings are restored to what they showed before when the server exits.
 """
@@ -180,6 +181,7 @@ class AIBridge:
     def __init__(self, llm, tts, voice):
         self.llm, self.tts, self.voice = llm.rstrip("/") if llm else None, tts.rstrip("/") if tts else None, voice
         self.progress = {"phase": "idle"}
+        self.tts_state = {"busy": 0, "x": None}   # how many lines are being sung, last audio-seconds per wall-second
         self.lock = threading.Lock()
 
     def _get(self, url, timeout=3):
@@ -287,8 +289,48 @@ class AIBridge:
             raise RuntimeError("no TTS configured (server.py --tts URL)")
         body = json.dumps({"input": text, "voice": voice or self.voice, "response_format": "wav"}).encode()
         rq = urllib.request.Request(self.tts + "/v1/audio/speech", body, {"Content-Type": "application/json"})
-        with urllib.request.urlopen(rq, timeout=180) as r:
-            return r.read()
+        t0 = time.time()
+        with self.lock:
+            self.tts_state["busy"] += 1
+        try:
+            with urllib.request.urlopen(rq, timeout=180) as r:
+                wav = r.read()
+        finally:
+            with self.lock:
+                self.tts_state["busy"] -= 1
+        secs = time.time() - t0
+        if len(wav) > 44 and secs > 0:   # 24 kHz mono 16-bit from Pocket TTS
+            with self.lock:
+                self.tts_state["x"] = round((len(wav) - 44) / 48000 / secs, 2)
+        return wav
+
+
+def battery():
+    """Charge state of the device battery from sysfs, or None when there is none (a desktop)."""
+    base = "/sys/class/power_supply"
+    out = {}
+    try:
+        names = os.listdir(base)
+    except OSError:
+        return None
+    for d in names:
+        def rd(f, d=d):
+            try:
+                with open(os.path.join(base, d, f)) as fh:
+                    return fh.read().strip()
+            except OSError:
+                return None
+        kind = rd("type")
+        if kind == "Battery":
+            cap, st, i, v, pw = rd("capacity"), rd("status"), rd("current_now"), rd("voltage_now"), rd("power_now")
+            try:
+                w = abs(int(pw)) / 1e6 if pw else abs(int(i)) * int(v) / 1e12 if i and v else None
+            except ValueError:
+                w = None
+            out.update({"pct": int(cap) if cap and cap.isdigit() else None, "status": st, "w": round(w, 1) if w is not None else None})
+        elif kind in ("USB", "Mains", "USB_PD") and rd("online") not in (None, "0"):
+            out["ac"] = True
+    return out or None
 
 
 def make_handler(state, directory):
@@ -299,7 +341,7 @@ def make_handler(state, directory):
             super().__init__(*a, directory=directory, **kw)
 
         def log_message(self, fmt, *args):
-            if self.path.startswith(("/led", "/status", "/cmd", "/ai/progress", "/ai/health")):
+            if self.path.startswith(("/led", "/status", "/cmd", "/sys", "/ai/progress", "/ai/health")):
                 return
             super().log_message(fmt, *args)
 
@@ -329,6 +371,13 @@ def make_handler(state, directory):
             if path == "/ai/progress":
                 with state.ai.lock:
                     return self._json(200, state.ai.progress)
+            if path == "/sys":   # the battery gauge and the Gemma speedo in the handheld's views row
+                with state.ai.lock:
+                    prog, tts = dict(state.ai.progress), dict(state.ai.tts_state)
+                if prog.get("phase") == "writing" and prog.get("secs"):
+                    prog["tps"] = round(prog["tokens"] / prog["secs"], 1)
+                prog.pop("t0", None)
+                return self._json(200, {"bat": battery(), "llm": bool(state.ai.llm), "ai": prog, "tts": tts})
             if path == "/cmd":
                 wait = 20.0
                 if "wait=" in self.path:
