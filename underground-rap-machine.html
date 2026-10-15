@@ -230,6 +230,10 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
 .views,.fo{display:none}
 html.flip{background:var(--ground)}
 .flip body{overflow:hidden}
+/* on the touchscreen a long press or a drag must never start a text selection */
+.flip body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.flip input,.flip textarea,.flip [contenteditable]{-webkit-user-select:text;user-select:text}
+.flip button,.flip .cell,.flip .pad-hit,.flip canvas{touch-action:manipulation}
 .flip .machine{height:var(--ph,540px);max-width:none;padding:8px;gap:8px;grid-template-rows:auto auto auto minmax(0,1fr);overflow:hidden}
 .flip .top{grid-template-columns:auto minmax(0,1fr);gap:14px}
 .flip .logo{font-size:30px;filter:none}
@@ -2387,6 +2391,7 @@ function initFlip() {
   $('.panel[data-view="pads"] h2 small').textContent = 'A B X Y · d-pad';
   // a touched button must not keep focus, or Start (Space) would press it again instead of play/stop
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) b.blur(); });
+  document.addEventListener('contextmenu', e => e.preventDefault());   // no long-press menu or selection handles
   if (REMOTE) { remoteLoop(); setInterval(postStatus, 1000); addEventListener('error', e => { lastErr = String(e.message || e); }); }
   sysTick(); setInterval(sysTick, 2000);
 }
