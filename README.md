@@ -27,7 +27,7 @@ Four artist lanes. Each one is a template in `STYLES`: tempo and swing ranges, s
 | Mix | light sidechain, bright reverb | heavy sidechain pump, more tape and dirt | hardest pump, most tape | least tape, most reverb and delay |
 | Vocal preset | hard tune, +1.5 st formant, wide double | hard tune, dirtier, tighter space | hard tune, heavy dirt, formant down | hard tune, +3 st pitch and formant, widest double |
 
-**Generate** rolls a new beat in the selected template: tempo, key, scale, 4-bar chord progression and every row of the pattern. **N** cycles the lanes.
+**Generate** rolls a new beat in the selected template: key, scale, 4-bar chord progression and every row of the pattern, at the tempo you have set. Switching lanes picks a tempo from the lane's range. **N** cycles the lanes.
 
 ## Controls
 

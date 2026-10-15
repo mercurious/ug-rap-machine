@@ -2256,8 +2256,11 @@ function applySongUI() {
   $('#styleTag').textContent = STYLES[song.style].label + ' · ' + STYLES[song.style].tag;
   renderLabels(); renderChords(); renderGrid();
 }
-function newSong() {
+function newSong(keepTempo) {
+  // Generate beat re-rolls the song but not the performer's tempo; a lane switch takes the lane's
+  const bpm = song && song.bpm;
   song = generateSong(styleKey, randSeed());
+  if (keepTempo && bpm) song.bpm = bpm;
   applySongUI(); pushTuner();
   if (ctx) { applySongAudio(); scheduleFlipRender(); }
 }
@@ -2279,7 +2282,7 @@ function initUI() {
   const mode = $('#mode'); Object.entries(SCALES).forEach(([k, v]) => mode.append(el('option', '', { value: k, text: v.name })));
   buildGridUI(); renderPads();
   $$('.style-btn').forEach(b => b.addEventListener('click', () => setStyle(b.dataset.style)));
-  $('#gen').addEventListener('click', newSong);
+  $('#gen').addEventListener('click', () => newSong(true));
   $('#play').addEventListener('click', togglePlay);
   $('#rec').addEventListener('click', toggleRec);
   $('#bpm').addEventListener('change', () => { song.bpm = clamp(Math.round(+$('#bpm').value || song.bpm), 60, 200); $('#bpm').value = song.bpm; ai.anchor = song.bpm; applySongAudio(); scheduleFlipRender(); });
@@ -2342,7 +2345,7 @@ function initUI() {
     if (inField(e) || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
     const k = e.key.toLowerCase();
     if (e.code === 'Space') { if (!FLIP && e.target.closest('button')) return; e.preventDefault(); togglePlay(); }
-    else if (k === 'g') newSong();
+    else if (k === 'g') newSong(true);
     else if (k === 'n') nextStyle();
     else if (k === 'r') toggleRec();
     else if (k === 'm') toggleMic();
