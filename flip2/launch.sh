@@ -5,6 +5,9 @@
 # the controller profile for the rap machine. Leave with Guide (Home) or the L1+Select+Start chord;
 # everything is cleaned up and the rings go back to what they showed.
 #   URM_PORT=8766   URM_REMOTE=1 adds ?remote so `server.py --key ...` can drive the page over ssh
+#   URM_AI=1 also starts Gemma (llama-server, E4B with its MTP head, big cores) and Pocket TTS
+#   (tts-server) from the retro-voice-chat llamatalk kit for the MC mode; URM_MODEL=e2b for the small
+#   model. URM_LLM_PORT=8096 URM_TTS_PORT=8097 URM_VOICE=alba
 
 [ -f /etc/profile ] && . /etc/profile >/dev/null 2>&1
 APP=/storage/apps/rap-machine
@@ -15,19 +18,64 @@ mkdir -p "$APP/logs"
 echo "===== $(date -u +%FT%TZ) launch" >> "$LOG"
 
 [ -x "$FF/launch.sh" ] || { echo "house Firefox launcher not found at $FF/launch.sh" | tee -a "$LOG" >&2; exit 1; }
+# One at a time: a second Firefox on the same profile exits at once, and the house launcher's cleanup
+# would then remove the running session's pid file and reset its controller profile.
+if FP=$(sed -n 1p "$FF/firefox.pid" 2>/dev/null) && [ -n "$FP" ] && kill -0 "$FP" 2>/dev/null; then
+  echo "Firefox is already running (pid $FP); leave it first (Guide, or L1+Select+Start)" | tee -a "$LOG" >&2; exit 1
+fi
+if python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:$PORT/status', timeout=1)" 2>/dev/null; then
+  echo "something already answers on port $PORT; is the rap machine running?" | tee -a "$LOG" >&2; exit 1
+fi
 
-SRV=""; FFL=""
+SRV=""; FFL=""; AIPIDS=""
 cleanup() {
   trap - EXIT INT TERM HUP
   [ -n "$FFL" ] && kill "$FFL" 2>/dev/null
   [ -n "$SRV" ] && kill "$SRV" 2>/dev/null
   [ -n "$SRV" ] && wait "$SRV" 2>/dev/null
+  for p in $AIPIDS; do kill "$p" 2>/dev/null; done
+  for p in $AIPIDS; do while kill -0 "$p" 2>/dev/null; do sleep 0.2; done; done
   echo "$(date -u +%FT%TZ) exit" >> "$LOG"
 }
 trap cleanup EXIT
 trap 'exit 130' INT TERM HUP
 
-python3 "$APP/server.py" --port "$PORT" --dir "$APP" >> "$APP/logs/server.log" 2>&1 &
+# MC mode: the language model and the voice, from the llamatalk kit that Retro Voice Chat installs.
+# Same core pinning as that app (SM8250: 0-3 little, 4-7 big): LLM generates on 4-5 and reads the
+# prompt on 4-7, TTS on 6-7 at nice -10. Different ports from Retro Voice Chat so both can be installed.
+AI_ARGS=""
+if [ -n "${URM_AI:-}" ]; then
+  LT=${URM_LLAMATALK:-/storage/games-external/retro-voice-chat/llamatalk}
+  M=${URM_MODELS:-$("$LT/models.sh" path 2>/dev/null)}; M=${M:-/storage/games-external/models}
+  LLM_PORT=${URM_LLM_PORT:-8096}; TTS_PORT=${URM_TTS_PORT:-8097}
+  if [ "${URM_MODEL:-e4b}" = e2b ]; then
+    LLM_MODEL=gemma-4-E2B_q4_0-it; DRAFT=""; OMPENV="env -u OMP_PROC_BIND -u OMP_PLACES"; TB=2
+  else
+    LLM_MODEL=gemma-4-E4B_q4_0-it; DRAFT="-md $M/mtp-gemma-4-E4B-it-Q4_0.gguf --spec-type draft-mtp"
+    OMPENV="env OMP_PROC_BIND=close OMP_PLACES={4},{5},{6},{7}"; TB=4
+  fi
+  missing=""
+  for f in "$LT/bin/llama-server" "$LT/bin/tts-server" "$M/$LLM_MODEL.gguf" "$M/pocket-tts-english_2026-09-Q8_0.gguf" "$M/pocket-tts-english_2026-09-voices.gguf"; do
+    [ -e "$f" ] || missing="$missing $f"
+  done
+  if [ -n "$missing" ]; then
+    echo "MC mode needs the llamatalk kit and models (install Retro Voice Chat); missing:$missing" | tee -a "$LOG" >&2
+  else
+    [ -f "$M/mtp-gemma-4-E4B-it-Q4_0.gguf" ] || DRAFT=""
+    ulimit -c 0
+    env GGML_BACKEND=CPU PT_THREADS=2 nice -n -10 taskset -c 6-7 "$LT/bin/tts-server" \
+      --model "$M/pocket-tts-english_2026-09-Q8_0.gguf" --voices "$M/pocket-tts-english_2026-09-voices.gguf" \
+      --voice "${URM_VOICE:-alba}" --host 127.0.0.1 --port "$TTS_PORT" >> "$APP/logs/tts.log" 2>&1 &
+    AIPIDS="$AIPIDS $!"
+    $OMPENV taskset -c 4-7 "$LT/bin/llama-server" -m "$M/$LLM_MODEL.gguf" $DRAFT -dev none -t 2 -tb $TB -fa on \
+      -c 8192 -np 1 --jinja -rea off --cache-ram 0 --host 127.0.0.1 --port "$LLM_PORT" >> "$APP/logs/llm.log" 2>&1 &
+    AIPIDS="$AIPIDS $!"
+    AI_ARGS="--llm http://127.0.0.1:$LLM_PORT --tts http://127.0.0.1:$TTS_PORT --voice ${URM_VOICE:-alba}"
+    echo "MC mode: $LLM_MODEL on :$LLM_PORT, Pocket TTS on :$TTS_PORT" >> "$LOG"
+  fi
+fi
+
+python3 "$APP/server.py" --port "$PORT" --dir "$APP" $AI_ARGS >> "$APP/logs/server.log" 2>&1 &
 SRV=$!
 i=0
 while [ $i -lt 20 ]; do
@@ -36,7 +84,7 @@ while [ $i -lt 20 ]; do
 done
 
 touch "$APP/.started"
-URL="http://127.0.0.1:$PORT/underground-rap-machine.html?flip${URM_REMOTE:+&remote}"
+URL="http://127.0.0.1:$PORT/underground-rap-machine.html?flip${URM_REMOTE:+&remote}${AI_ARGS:+&mc}"
 "$FF/launch.sh" --kiosk "$URL" &
 FFL=$!
 

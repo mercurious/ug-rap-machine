@@ -75,6 +75,26 @@ No mic? **Tune a vocal file…** runs an audio file through the same chain, star
 | M | Mic on / off |
 | [ ] | Previous / next view (Flip 2 layout only) |
 
+## MC mode: Gemma plays the machine
+
+The **MC** panel hands the instrument to a local language model. Through the bridge in `flip2/server.py`, a [llama.cpp](https://github.com/ggml-org/llama.cpp) server running **Gemma 4 E4B** gets the beat as it stands (lane, tempo, key, chords, how busy each row is, the theme you picked) and answers with one JSON performance, constrained by a schema so it always parses:
+
+- the lane, tempo, key, mode and swing, and which rows to re-roll;
+- a booth preset (pitch, formant, double, dirt, delay, reverb) and which Pocket TTS voice sings;
+- sections in order, each a scene, 4 or 8 bars, pad hits on given bars, and the lines, every line with a **melody** as scale degrees.
+
+**Pocket TTS** then speaks each line, the page trims it, lays the sections on the bar grid, fires the scenes and pads at their bars, and plays every line into the vocal chain. While a line plays, the auto-tune is forced to one note at a time from its melody, spread evenly over the line, so spoken TTS comes out sung in the song's key. Your mic can stay on; it shares the booth. **Keep going** asks for the next song while this one plays and switches to it when the plan ends; until it arrives, the plan loops. Themes are a hint, "surprise me" leaves it to the model. Takes record the whole thing like any other performance.
+
+Timing on the Flip 2 with E4B: about 90–150 s to write a plan of ten lines, then a few seconds per line of speech. The status line shows what it is doing. `URM_MODEL=e2b` picks the small Gemma, about twice as fast.
+
+To run it, start the bridge with the two servers:
+
+```bash
+python3 flip2/server.py --dir . --llm http://127.0.0.1:8096 --tts http://127.0.0.1:8097
+```
+
+and open <http://127.0.0.1:8766/underground-rap-machine.html?mc>. On the Flip 2, **Rap Machine + Gemma** in Ports starts everything (it uses the llamatalk kit and models that [Retro Voice Chat](https://github.com/mercurious/retro-voice-chat) installs). On a desktop, point `--llm` at any llama-server with a Gemma (or another instruction model) and `--tts` at a `tts-server` from the same kit; the page talks to the bridge only.
+
 ## Retroid Pocket Flip 2
 
 The same file runs as a handheld instrument on a Flip 2 with [ROCKNIX](https://rocknix.org) and the house Firefox build. `flip2/` holds the device side:
@@ -84,10 +104,10 @@ The same file runs as a handheld instrument on a Flip 2 with [ROCKNIX](https://r
 | `server.py` | Serves the page on `http://127.0.0.1:8766` (a secure context, so the mic works) and writes the stick LED rings from `POST /led`. Also `--test` to see the ring order, `--grant-mic` to allow the mic for that origin in the Firefox profile, and `--key`, `--click`, `--set`, `--status` to drive a page opened with `?remote` from ssh. |
 | `launch.sh` | Starts the server, opens the page in kiosk mode through `/storage/apps/firefox-rocknix/launch.sh`, then loads the controller profile. Cleans up and restores the rings on exit. |
 | `rap-machine.yaml` | InputPlumber profile: which button sends which key. |
-| `Rap Machine.sh` | The ROCKNIX port entry (shows up under Ports in EmulationStation). |
+| `Rap Machine.sh`, `Rap Machine + Gemma.sh` | The ROCKNIX port entries (under Ports in EmulationStation); the second one also starts Gemma and Pocket TTS for the MC mode. |
 | `install.sh [host]` | Copies all of it over ssh (default host `flip2-12g`), grants the mic, adds the port to `gamelist.xml`. |
 
-Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5" 1920×1080 panel and shows one view at a time: **Pattern**, **Booth**, **Pads**, **Mix**. The touchscreen works everywhere; the controller does the performing:
+Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5" 1920×1080 panel and shows one view at a time: **Pattern**, **Booth**, **Pads**, **Mix**, **MC**. The touchscreen works everywhere; the controller does the performing:
 
 | Control | Action |
 |---|---|

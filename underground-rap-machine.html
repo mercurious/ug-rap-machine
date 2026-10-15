@@ -152,6 +152,39 @@ input[type=range]:hover::-moz-range-thumb{background:var(--acc)}
 .rh input[type=range]::-moz-range-thumb{width:8px;height:12px}
 .file-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
 
+/* MC (Gemma) */
+.mc-row{display:grid}
+.themes{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.themes .btn{font-size:11px;padding:7px 10px;text-transform:none;letter-spacing:.04em}
+.mc-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr);gap:14px;align-items:start}
+.lyrics{display:grid;gap:10px}
+.sec{display:grid;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.sec .sh{display:flex;justify-content:space-between;gap:8px;font:600 10px/1 var(--f-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.sec .sh b{color:var(--acc-2);font-weight:600}
+.sec.now{border-color:var(--acc)}
+.line{font:500 14px/1.35 var(--f-ui);color:var(--text);padding:2px 6px;border-radius:4px;display:flex;justify-content:space-between;gap:10px}
+.line .mel{font:500 10px var(--f-mono);color:var(--faint);white-space:nowrap}
+.line.now{background:var(--acc);color:var(--ink)}
+.line.now .mel{color:var(--ink)}
+.line.sung{color:var(--dim)}
+.line.nobuf{opacity:.5}
+.mc-side{display:grid;gap:8px}
+.mc-side .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 12px/1.4 var(--f-mono);color:var(--dim)}
+.mc-side .kv b{color:var(--text);font-weight:500}
+.mc-title{font:700 20px/1.1 var(--f-ui);letter-spacing:.04em}
+.mc-status{font:500 12px var(--f-mono);color:var(--acc-2);min-height:1.4em}
+.mc-status.err{color:var(--warn)}
+.mc-health{font:500 11px var(--f-mono);color:var(--faint)}
+.mc-health b{color:var(--dim);font-weight:500}
+.btn.ai[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--ink)}
+.flip .mc-body{grid-template-columns:minmax(0,1fr) 240px;gap:8px}
+.flip .lyrics{max-height:300px;overflow:auto;gap:6px}
+.flip .sec{padding:5px 8px;gap:2px}
+.flip .line{font-size:12px;padding:1px 5px}
+.flip .mc-title{font-size:16px}
+.flip .themes .btn{padding:7px 9px;font-size:10px}
+.flip .mc-side .kv{font-size:11px}
+
 /* lower */
 .lower{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(310px,1fr);gap:14px;align-items:start}
 .pads{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -224,7 +257,7 @@ html.flip{background:var(--ground)}
 .flip .fstat i{font-style:normal;color:var(--faint);padding:5px 8px;border:1px solid var(--line);border-radius:4px}
 .flip .fstat i.on{color:var(--ink);background:var(--acc-2);border-color:var(--acc-2)}
 .flip .fstat i#fs-rec.on{background:var(--rec);border-color:var(--rec);color:#1a0303}
-.flip .deck,.flip .lower{display:contents}
+.flip .deck,.flip .lower,.flip .mc-row{display:contents}
 .flip .panel{padding:8px 10px;gap:6px;min-height:0;overflow:hidden}
 .flip .ph h2{font-size:12px}
 /* pattern */
@@ -261,7 +294,7 @@ html.flip{background:var(--ground)}
 .flip input[type=range]::-moz-range-thumb{width:18px;height:22px}
 /* pads */
 .flip .panel[data-view="pads"]{grid-template-rows:auto minmax(0,1fr)}
-.flip .panel[data-view="pattern"]{align-content:start}
+.flip .panel[data-view="pattern"],.flip .panel[data-view="mc"]{align-content:start}
 .flip .pads{gap:8px;height:100%}
 .flip .pad-hit{aspect-ratio:auto;height:100%;min-height:110px;padding:10px 12px}
 .flip .pad-hit .k{font-size:16px;font-weight:700;color:var(--acc-2)}
@@ -336,6 +369,7 @@ html.flip{background:var(--ground)}
     <button class="btn view" data-view="booth" aria-pressed="false">Booth</button>
     <button class="btn view" data-view="pads" aria-pressed="false">Pads</button>
     <button class="btn view" data-view="mix" aria-pressed="false">Mix</button>
+    <button class="btn view" data-view="mc" aria-pressed="false">MC</button>
     <span class="vk">R1</span>
     <span class="fstat"><b id="fs-scene">HOOK</b><i id="fs-mic">MIC</i><i id="fs-rec">REC</i><i id="fs-led">LED</i></span>
   </nav>
@@ -442,6 +476,29 @@ html.flip{background:var(--ground)}
       </div>
       <div class="ph"><h2>Takes</h2><span class="sub" id="recTime"></span></div>
       <div class="takes" id="takes"><p class="empty">Hit <b>Record take</b> (or <kbd>R</kbd>) — it captures the beat, pads and your tuned vocal.</p></div>
+    </section>
+  </section>
+
+  <section class="mc-row">
+    <section class="panel mc" data-view="mc" aria-label="MC: Gemma plays the machine">
+      <div class="ph">
+        <h2>MC <small>Gemma · llamatalk · Pocket TTS</small></h2>
+        <div class="booth-row">
+          <select id="aiVoice" aria-label="Singing voice"><option value="">voice: default</option></select>
+          <button class="btn" id="aiLoop" aria-pressed="true" title="Ask Gemma for the next song while this one plays">Keep going</button>
+          <button class="btn primary ai" id="aiGo" aria-pressed="false">Let Gemma play</button>
+        </div>
+      </div>
+      <div class="themes" id="aiThemes"><span class="lbl">Theme</span></div>
+      <div class="mc-body">
+        <div class="lyrics" id="aiLyrics"><p class="empty">Gemma gets the beat as it stands, picks a lane, tempo, key and scene order, re-rolls rows, sets the booth, writes a hook and verses with a melody for every line, and Pocket TTS sings them through the auto-tune. Needs the bridge with llamatalk: see the README.</p></div>
+        <div class="mc-side">
+          <div class="mc-title" id="aiTitle"></div>
+          <div class="mc-status" id="aiStatus"></div>
+          <div class="kv" id="aiKv"></div>
+          <div class="mc-health" id="aiHealth">checking the bridge…</div>
+        </div>
+      </div>
     </section>
   </section>
 
@@ -1862,11 +1919,16 @@ function tapeStop(t) {
 async function triggerPad(i) {
   await ensureAudio();
   if (ctx.state !== 'running') await ctx.resume();
-  const p = PADS[i], t = ctx.currentTime + 0.01;
+  firePad(i, ctx.currentTime + 0.01);
+}
+function firePad(i, t) {
+  const p = PADS[i];
   if (p.buf) { const s = ctx.createBufferSource(); s.buffer = p.buf; s.connect(N.fx); s.start(t); }
   else FX[p.id](t);
-  const b = $$('.pad-hit')[i]; b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 140);
-  led.flash = performance.now();
+  setTimeout(() => {
+    const b = $$('.pad-hit')[i]; b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 140);
+    led.flash = performance.now();
+  }, Math.max(0, (t - ctx.currentTime) * 1000));
 }
 function trimSilence(buf, thr = 0.02) {
   const n = buf.length, sr = buf.sampleRate, ch = [...Array(buf.numberOfChannels)].map((_, c) => buf.getChannelData(c));
@@ -2258,11 +2320,12 @@ function initUI() {
   document.addEventListener('keyup', e => { if (e.key === 'f' || e.key === 'F') hfUp(); });
   if (FLIP) initFlip();
   setStyle('glitter');
+  initAI();
 }
 function nextStyle() { const ks = Object.keys(STYLES); setStyle(ks[(ks.indexOf(styleKey) + 1) % ks.length]); }
 
 /* ---------- views (one panel at a time on the Flip 2) ---------- */
-const VIEWS = ['pattern', 'booth', 'pads', 'mix'];
+const VIEWS = ['pattern', 'booth', 'pads', 'mix', 'mc'];
 let view = 'pattern';
 function setView(v) {
   view = v;
@@ -2349,13 +2412,222 @@ function postStatus() {
     sr: ctx ? ctx.sampleRate : null, outLat: ctx ? ctx.outputLatency : null, tuner: tuner ? tuner.mode : null, tunerLat: tunerLatency,
     rms: lastInfo ? lastInfo.rms : null, voiced: lastInfo ? !!lastInfo.v : null, rec: !!recorder, takes: takeN, led: led.on, ledFail: led.fail,
     inner: [innerWidth, innerHeight], dpr: devicePixelRatio, pitchRect: [Math.round(r.width), Math.round(r.height)], pitchClient: [pc.clientWidth, pc.clientHeight],
-    msg: $('#boothMsg').textContent, err: lastErr, ua: navigator.userAgent };
+    msg: $('#boothMsg').textContent, err: lastErr, ua: navigator.userAgent, mc: { on: ai.on, status: ai.status, title: ai.plan && ai.plan.title, next: ai.next && ai.next.title, evts: ai.evts.length } };
   fetch('/status', { method: 'POST', body: JSON.stringify(st), headers: { 'Content-Type': 'application/json' } }).catch(() => {});
 }
 async function togglePlay() {
   await ensureAudio();
   if (ctx.state !== 'running') await ctx.resume();
   playing ? stopTransport() : startTransport();
+}
+
+/* =====================================================================
+   MC MODE: Gemma plays the machine
+   The bridge (flip2/server.py --llm --tts) asks a llama.cpp server for a JSON performance plan and
+   Pocket TTS for each line. The plan is applied to the instrument (lane, tempo, key, re-rolls, booth
+   preset), every line is synthesized, then the performance is scheduled on the bar grid: scenes and
+   pads at their bars, each sung line through the vocal chain (N.vin) with the auto-tune forced to one
+   note at a time from the line's melody. With Keep going, the next plan is requested while this one
+   plays and takes over when it ends; until then the plan loops.
+   ===================================================================== */
+const THEMES = ['surprise me', 'flexing', 'heartbreak', 'late night drive', 'paranoid', 'summer', 'money phone', 'texting an ex'];
+const ai = { on: false, loop: true, theme: THEMES[0], voices: [], health: null, gen: 0, plan: null, next: null, nextBusy: false,
+             evts: [], srcs: [], timers: [], titles: [], lineEls: [], secEls: [], status: '' };
+const MC = /[?&]mc\b/.test(location.search);
+function initAI() {
+  const box = $('#aiThemes');
+  THEMES.forEach(t => {
+    const b = el('button', 'btn', { text: t, 'aria-pressed': String(t === ai.theme) });
+    b.addEventListener('click', () => { ai.theme = t; $$('#aiThemes .btn').forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
+    box.append(b);
+  });
+  $('#aiGo').addEventListener('click', () => ai.on ? aiStop() : aiStart());
+  $('#aiLoop').addEventListener('click', () => { ai.loop = !ai.loop; $('#aiLoop').setAttribute('aria-pressed', String(ai.loop)); });
+  aiHealth();
+  if (MC) setInterval(() => { if (!ai.on) aiHealth(); }, 8000);
+}
+async function aiHealth() {
+  try {
+    const h = await (await fetch('/ai/health')).json();
+    ai.health = h;
+    if (h.voices.length && ai.voices.join() !== h.voices.join()) {
+      ai.voices = h.voices;
+      const sel = $('#aiVoice'); sel.innerHTML = '';
+      sel.append(el('option', '', { value: '', text: 'voice: Gemma picks' }));
+      h.voices.forEach(v => sel.append(el('option', '', { value: v, text: v })));
+    }
+    const llm = h.llm ? `Gemma <b>${(h.model || 'ready').replace(/\.gguf$/, '')}</b>` : h.llmUrl ? `Gemma <b>${h.llmStatus || 'down'}</b>` : 'no LLM';
+    const tts = h.tts ? `Pocket TTS <b>${h.voices.length} voices</b>` : h.ttsUrl ? 'Pocket TTS <b>down</b>' : 'no TTS';
+    $('#aiHealth').innerHTML = `${llm} · ${tts}`;
+    return h;
+  } catch (e) {
+    ai.health = null; $('#aiHealth').textContent = 'no bridge: open the page through flip2/server.py --llm --tts';
+    return null;
+  }
+}
+const aiSay = (t, err) => { ai.status = t; const e = $('#aiStatus'); e.textContent = t; e.classList.toggle('err', !!err); };
+function aiSummary() {
+  const density = {}; for (const tr of TRACKS) density[tr.id] = song.pat[tr.id].filter(Boolean).length;
+  return { lane: styleKey, bpm: song.bpm, key: NOTES[song.root], mode: song.mode, chords: song.chords.map(c => c.name),
+           swing: Math.round(song.swing * 100), scene, fills: song.fills, density };
+}
+async function aiRequestPlan(gen) {
+  const voices = ai.voices.length ? ai.voices : ['alba'];
+  const body = { state: aiSummary(), theme: ai.theme, avoid: ai.titles, voices };
+  const poll = setInterval(async () => {
+    if (gen !== ai.gen) return;
+    try {
+      const p = await (await fetch('/ai/progress')).json();
+      if (p.phase === 'prompt') aiSay('Gemma is reading the beat…');
+      else if (p.phase === 'writing') aiSay(`Gemma is writing… ${p.tokens} tokens, ${Math.round(p.secs)} s`);
+    } catch (e) { /* keep the last status */ }
+  }, 1000);
+  try {
+    const r = await fetch('/ai/plan', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+    const d = await r.json();
+    if (!d.plan) throw new Error(d.error || 'no plan');
+    d.plan.secs = d.secs; d.plan.tokens = d.tokens;
+    return d.plan;
+  } finally { clearInterval(poll); }
+}
+function aiLines(plan) { const out = []; plan.sections.forEach((s, si) => (s.lines || []).forEach((l, li) => out.push({ ...l, si, li }))); return out; }
+async function aiSynth(plan, gen, onProgress) {
+  const voice = $('#aiVoice').value || (ai.voices.includes(plan.voice) ? plan.voice : (ai.health && ai.health.voice) || '');
+  plan.voiceUsed = voice;
+  const lines = aiLines(plan);
+  for (let i = 0; i < lines.length; i++) {
+    if (gen !== ai.gen) return false;
+    const L = lines[i];
+    onProgress && onProgress(i, lines.length);
+    try {
+      const r = await fetch('/ai/tts', { method: 'POST', body: JSON.stringify({ text: L.text, voice }), headers: { 'Content-Type': 'application/json' } });
+      if (!r.ok) throw new Error('tts ' + r.status);
+      const buf = trimSilence(await ctx.decodeAudioData(await r.arrayBuffer()), 0.01);
+      plan.sections[L.si].lines[L.li].buf = buf;
+    } catch (e) { plan.sections[L.si].lines[L.li].buf = null; lastErr = 'tts: ' + e.message; }
+  }
+  return true;
+}
+function aiApply(plan) {
+  if (plan.lane && STYLES[plan.lane] && plan.lane !== styleKey) setStyle(plan.lane);
+  const P = STYLES[styleKey];
+  if (plan.bpm) { song.bpm = clamp(Math.round(plan.bpm), Math.max(60, P.bpm[0] - 6), Math.min(200, P.bpm[1] + 6)); $('#bpm').value = song.bpm; }
+  const key = NOTES.indexOf(plan.key); if (key >= 0) song.root = key;
+  if (SCALES[plan.mode]) song.mode = plan.mode;
+  if (plan.swing != null) song.swing = clamp(plan.swing, 0, 30) / 100;
+  if (plan.reroll) { const R = rng(randSeed()); for (const row of plan.reroll) if (GEN[row]) song.pat[row] = GEN[row](song.style, R, P, song.pat); }
+  finalizeSong(song); applySongUI(); pushTuner(); applySongAudio(); scheduleFlipRender();
+  if (plan.vocal) {
+    const v = plan.vocal;
+    Object.assign(voc, { pitch: clamp(v.pitch | 0, -12, 12), formant: clamp(v.formant | 0, -6, 6), double: clamp(v.double | 0, 0, 100),
+                         dirt: clamp(v.dirt | 0, 0, 100), delay: clamp(v.delay | 0, 0, 100), verb: clamp(v.verb | 0, 0, 100) });
+    binds.forEach(f => f()); applyVocal();
+  }
+  if (voc.scale === 'off') { voc.scale = 'beat'; $('#v-scale').value = 'beat'; pushTuner(); $('#lockName').textContent = lockLabel(); }
+  ai.titles.push(plan.title); if (ai.titles.length > 8) ai.titles.shift();
+}
+function renderPlan(plan) {
+  const box = $('#aiLyrics'); box.innerHTML = ''; ai.lineEls = []; ai.secEls = [];
+  plan.sections.forEach((s, si) => {
+    const sec = el('div', 'sec'); ai.secEls.push(sec);
+    const sh = el('div', 'sh'); sh.append(el('b', '', { text: s.scene }), el('span', '', { text: `${s.bars} bars` + (s.pads && s.pads.length ? ' · pads ' + s.pads.map(p => PADS[clamp(p.pad - 1, 0, 7)].name.toLowerCase()).join(', ') : '') }));
+    sec.append(sh);
+    ai.lineEls[si] = [];
+    (s.lines || []).forEach((l, li) => {
+      const d = el('div', 'line' + (l.buf === null ? ' nobuf' : '')); d.append(el('span', '', { text: l.text }), el('span', 'mel', { text: (l.melody || []).join(' ') }));
+      sec.append(d); ai.lineEls[si][li] = d;
+    });
+    box.append(sec);
+  });
+  $('#aiTitle').textContent = plan.title || '';
+  const kv = $('#aiKv'); kv.innerHTML = '';
+  const rows = [['lane', STYLES[plan.lane] ? STYLES[plan.lane].label : plan.lane], ['groove', `${plan.bpm} BPM · ${plan.key} ${plan.mode} · swing ${plan.swing}%`],
+                ['re-roll', (plan.reroll || []).join(' ') || '—'], ['voice', plan.voiceUsed || plan.voice],
+                ['booth', plan.vocal ? `pitch ${plan.vocal.pitch > 0 ? '+' : ''}${plan.vocal.pitch} · formant ${plan.vocal.formant} · double ${plan.vocal.double} · dirt ${plan.vocal.dirt}` : '—'],
+                ['written', plan.secs ? `${plan.tokens} tokens in ${Math.round(plan.secs)} s` : '—']];
+  for (const [k, v] of rows) kv.append(el('span', '', { text: k }), el('b', '', { text: v }));
+}
+function degMask(d) { const m = new Array(12).fill(0); m[pcOf(sn(song, d))] = 1; return m; }
+function aiStartPlan(plan, gen) {
+  // lay the plan on the bar grid from the next bar and schedule it from frame()
+  if (!playing) startTransport();
+  const barDur = 240 / song.bpm, t0 = nextBarTime(), evts = [];
+  let bar = 0;
+  plan.sections.forEach((s, si) => {
+    const start = bar;
+    evts.push({ t: t0 + start * barDur, kind: 'scene', scene: s.scene, si });
+    let cursor = start;
+    (s.lines || []).forEach((l, li) => {
+      if (!l.buf) return;
+      const need = Math.max(1, Math.ceil((l.buf.duration + 0.12) / barDur));
+      evts.push({ t: t0 + cursor * barDur, kind: 'line', line: l, si, li, dur: l.buf.duration });
+      cursor += need;
+    });
+    const len = Math.max(s.bars === 8 ? 8 : 4, cursor - start);
+    (s.pads || []).forEach(p => evts.push({ t: t0 + (start + clamp(p.bar - 1, 0, len - 1)) * barDur, kind: 'pad', i: clamp(p.pad - 1, 0, 7) }));
+    bar = start + len;
+  });
+  evts.push({ t: t0 + bar * barDur, kind: 'end' });
+  evts.sort((a, b) => a.t - b.t);
+  ai.evts = evts; ai.plan = plan; ai.gen = gen;
+  renderPlan(plan);
+  aiSay(`“${plan.title}” · ${bar} bars`);
+}
+function aiTick() {
+  if (!ai.on || !ctx || !ai.evts.length) return;
+  const horizon = ctx.currentTime + 0.25;
+  while (ai.evts.length && ai.evts[0].t <= horizon) {
+    const e = ai.evts.shift(), wait = Math.max(0, (e.t - ctx.currentTime) * 1000);
+    const later = (fn, ms) => { const id = setTimeout(fn, ms); ai.timers.push(id); return id; };
+    if (e.kind === 'scene') later(() => { setScene(e.scene); ai.secEls.forEach((s, i) => s.classList.toggle('now', i === e.si)); }, wait);
+    else if (e.kind === 'pad') firePad(e.i, e.t);
+    else if (e.kind === 'line') {
+      const src = ctx.createBufferSource(); src.buffer = e.line.buf; src.connect(N.vin); src.start(e.t); ai.srcs.push(src);
+      const mel = (e.line.melody || []).slice(0, 8), n = mel.length, step = e.dur / Math.max(1, n);
+      if (tuner && voc.scale !== 'off') mel.forEach((d, j) => later(() => tuner.post({ keys: degMask(d) }), wait + j * step * 1000));
+      later(() => { const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { $$('.line.now').forEach(x => { x.classList.remove('now'); x.classList.add('sung'); }); d.classList.add('now'); } }, wait);
+      later(() => { pushTuner(); const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { d.classList.remove('now'); d.classList.add('sung'); } }, wait + e.dur * 1000 + 40);
+    } else if (e.kind === 'end') later(() => aiEnd(), wait);
+  }
+}
+function aiEnd() {
+  if (!ai.on) return;
+  const gen = ai.gen;
+  if (ai.next) { const p = ai.next; ai.next = null; aiApply(p); aiStartPlan(p, gen); if (ai.loop) aiPrefetch(gen); }
+  else { aiSay(`“${ai.plan.title}” again` + (ai.loop ? ' · waiting for the next one' : '')); aiStartPlan(ai.plan, gen); }
+}
+async function aiPrefetch(gen) {
+  if (ai.nextBusy) return; ai.nextBusy = true;
+  try {
+    const plan = await aiRequestPlan(gen); if (gen !== ai.gen) return;
+    await aiSynth(plan, gen, (i, n) => aiSay(`Pocket TTS is singing the next one… ${i + 1}/${n}`)); if (gen !== ai.gen) return;
+    ai.next = plan; aiSay(`next up: “${plan.title}”`);
+  } catch (e) { if (gen === ai.gen) aiSay('next plan failed: ' + e.message, true); }
+  finally { ai.nextBusy = false; }
+}
+async function aiStart() {
+  await ensureAudio(); if (ctx.state !== 'running') await ctx.resume();
+  const h = await aiHealth();
+  if (!h || !h.llm) { aiSay(h && h.llmStatus === 'loading' ? 'Gemma is still loading, try again in a bit' : 'no language model: start the bridge with --llm (see README)', true); return; }
+  if (!h.tts) { aiSay('no Pocket TTS: start the bridge with --tts (see README)', true); return; }
+  ai.on = true; const gen = ++ai.gen; ai.next = null;
+  $('#aiGo').textContent = 'Stop Gemma'; $('#aiGo').setAttribute('aria-pressed', 'true');
+  try {
+    const plan = await aiRequestPlan(gen); if (gen !== ai.gen) return;
+    aiApply(plan); renderPlan(plan);
+    const ok = await aiSynth(plan, gen, (i, n) => aiSay(`Pocket TTS is singing… ${i + 1}/${n}`)); if (!ok || gen !== ai.gen) return;
+    aiStartPlan(plan, gen);
+    if (ai.loop) aiPrefetch(gen);
+  } catch (e) { aiSay('Gemma could not play: ' + e.message, true); aiStop(); }
+}
+function aiStop() {
+  ai.on = false; ai.gen++; ai.evts = []; ai.next = null;
+  ai.timers.forEach(clearTimeout); ai.timers = [];
+  ai.srcs.forEach(s => { try { s.stop(); } catch (e) { /* already done */ } }); ai.srcs = [];
+  if (ctx) pushTuner();
+  $$('.line.now').forEach(x => x.classList.remove('now')); ai.secEls.forEach(s => s.classList.remove('now'));
+  $('#aiGo').textContent = 'Let Gemma play'; $('#aiGo').setAttribute('aria-pressed', 'false');
+  if (ai.status && !$('#aiStatus').classList.contains('err')) aiSay('stopped');
 }
 
 /* ---------- drawing ---------- */
@@ -2448,6 +2720,7 @@ function frame() {
   }
   drawScope(); drawPitch(); drawReadout();
   if (FLIP) { ledTick(); flipStatus(); }
+  aiTick();
 }
 
 initUI();
