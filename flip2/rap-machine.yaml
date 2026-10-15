@@ -1,0 +1,195 @@
+# InputPlumber profile for the Underground Rap Machine in Firefox on the Retroid Pocket Flip 2.
+# flip2/launch.sh loads it once Firefox is up. Every control is a single key the page handles
+# (see the README); InputPlumber profiles have no chords, so each button does one thing.
+#
+#   A B X Y            pads 1–4            d-pad ↑ → ↓ ←      pads 5–8
+#   Start              play / stop         Select             generate a new beat
+#   L1 / R1            previous / next view (Pattern, Booth, Pads, Mix)
+#   left stick         scenes: up Intro, right Verse, down Hook, left Break
+#   L3 (press stick)   mic on / off        R3 (press stick)   record a take
+#   L2 (hold)          low-pass filter sweep
+#   right stick + R2   pointer and tap, for anything else on screen (the touchscreen works too)
+#   Guide (Home)       leave Firefox (the house F9 binding)
+version: 1
+kind: DeviceProfile
+name: Rap Machine
+description: Retroid controller mapping for the Underground Rap Machine in Firefox
+
+target_devices:
+  - mouse
+  - keyboard
+
+mapping:
+  - name: Pointer
+    source_event:
+      gamepad:
+        axis:
+          name: RightStick
+    target_events:
+      - mouse:
+          motion:
+            speed_pps: 700
+
+  - name: Tap
+    source_event:
+      gamepad:
+        trigger:
+          name: RightTrigger
+          deadzone: 0.25
+    target_events:
+      - mouse:
+          button: Left
+
+  - name: Hold filter
+    source_event:
+      gamepad:
+        trigger:
+          name: LeftTrigger
+          deadzone: 0.25
+    target_events:
+      - keyboard: KeyF
+
+  - name: Pad 1
+    source_event:
+      gamepad:
+        button: South
+    target_events:
+      - keyboard: Key1
+
+  - name: Pad 2
+    source_event:
+      gamepad:
+        button: East
+    target_events:
+      - keyboard: Key2
+
+  - name: Pad 3
+    source_event:
+      gamepad:
+        button: West
+    target_events:
+      - keyboard: Key3
+
+  - name: Pad 4
+    source_event:
+      gamepad:
+        button: North
+    target_events:
+      - keyboard: Key4
+
+  - name: Pad 5
+    source_event:
+      gamepad:
+        button: DPadUp
+    target_events:
+      - keyboard: Key5
+
+  - name: Pad 6
+    source_event:
+      gamepad:
+        button: DPadRight
+    target_events:
+      - keyboard: Key6
+
+  - name: Pad 7
+    source_event:
+      gamepad:
+        button: DPadDown
+    target_events:
+      - keyboard: Key7
+
+  - name: Pad 8
+    source_event:
+      gamepad:
+        button: DPadLeft
+    target_events:
+      - keyboard: Key8
+
+  - name: Previous view
+    source_event:
+      gamepad:
+        button: LeftBumper
+    target_events:
+      - keyboard: KeyLeftBrace
+
+  - name: Next view
+    source_event:
+      gamepad:
+        button: RightBumper
+    target_events:
+      - keyboard: KeyRightBrace
+
+  - name: Scene intro
+    source_event:
+      gamepad:
+        axis:
+          name: LeftStick
+          direction: up
+          deadzone: 0.5
+    target_events:
+      - keyboard: KeyI
+
+  - name: Scene verse
+    source_event:
+      gamepad:
+        axis:
+          name: LeftStick
+          direction: right
+          deadzone: 0.5
+    target_events:
+      - keyboard: KeyV
+
+  - name: Scene hook
+    source_event:
+      gamepad:
+        axis:
+          name: LeftStick
+          direction: down
+          deadzone: 0.5
+    target_events:
+      - keyboard: KeyH
+
+  - name: Scene break
+    source_event:
+      gamepad:
+        axis:
+          name: LeftStick
+          direction: left
+          deadzone: 0.5
+    target_events:
+      - keyboard: KeyB
+
+  - name: Mic on / off
+    source_event:
+      gamepad:
+        button: LeftStick
+    target_events:
+      - keyboard: KeyM
+
+  - name: Record take
+    source_event:
+      gamepad:
+        button: RightStick
+    target_events:
+      - keyboard: KeyR
+
+  - name: Play / stop
+    source_event:
+      gamepad:
+        button: Start
+    target_events:
+      - keyboard: KeySpace
+
+  - name: Generate beat
+    source_event:
+      gamepad:
+        button: Select
+    target_events:
+      - keyboard: KeyG
+
+  - name: Exit Firefox
+    source_event:
+      gamepad:
+        button: Guide
+    target_events:
+      - keyboard: KeyF9

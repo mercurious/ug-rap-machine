@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Underground Rap Machine</title>
+<script>if(/[?&]flip\b/.test(location.search)){var d=document.documentElement;d.className='flip';d.style.zoom=(innerWidth/960).toFixed(3);}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=UnifrakturMaguntia&display=swap">
@@ -33,6 +34,8 @@
   color-scheme:dark;
 }
 body[data-style="jerk"]{--acc:#6fd0ff;--acc-2:#dccfff;--ink:#03121b;--glow:rgba(111,208,255,.36)}
+body[data-style="che"]{--acc:#ff3d5a;--acc-2:#ffc8a8;--ink:#1a0408;--glow:rgba(255,61,90,.4)}
+body[data-style="prttifun"]{--acc:#b48cff;--acc-2:#a8ffd9;--ink:#140a24;--glow:rgba(180,140,255,.4)}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--ground);color:var(--text)}
 body{font:14px/1.45 var(--f-ui);-webkit-font-smoothing:antialiased;min-height:100%}
@@ -48,8 +51,8 @@ button{cursor:pointer}
 .model{font:500 11px/1 var(--f-mono);letter-spacing:.24em;color:var(--dim);margin-top:8px;text-transform:uppercase}
 .model b{color:var(--acc);font-weight:500}
 .styles{display:flex;gap:8px;flex-wrap:wrap}
-.style-btn{flex:1 1 210px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:grid;gap:3px;transition:border-color .15s,box-shadow .15s}
-.style-btn b{font-weight:700;font-size:19px;letter-spacing:.16em}
+.style-btn{flex:1 1 150px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:grid;gap:3px;transition:border-color .15s,box-shadow .15s}
+.style-btn b{font-weight:700;font-size:17px;letter-spacing:.14em}
 .style-btn span{font-size:12px;color:var(--dim)}
 .style-btn:hover{border-color:var(--line-2)}
 .style-btn[aria-pressed="true"]{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc),0 0 26px -8px var(--glow)}
@@ -189,6 +192,89 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
   .tg{border-right:0;padding:4px 6px}
   .readout{grid-template-columns:auto 1fr}
 }
+/* ---------- Retroid Pocket Flip 2 (?flip): the page is zoomed (see <head>) to a 960px-wide layout, 540px high on the 16:9 panel ---------- */
+.panel[hidden]{display:none}
+.views,.fo{display:none}
+html.flip{background:var(--ground)}
+.flip body{overflow:hidden}
+.flip .machine{height:var(--ph,540px);max-width:none;padding:8px;gap:8px;grid-template-rows:auto auto auto minmax(0,1fr);overflow:hidden}
+.flip .top{grid-template-columns:auto minmax(0,1fr);gap:14px}
+.flip .logo{font-size:30px;filter:none}
+.flip .model,.flip .scope,.flip .seed,.flip .hint,.flip .tg.swing,.flip footer{display:none}
+.flip .styles{gap:6px;flex-wrap:nowrap}
+.flip .style-btn{flex:1 1 0;padding:7px 10px;border-radius:8px;gap:0;text-align:center}
+.flip .style-btn b{font-size:13px;letter-spacing:.12em}
+.flip .style-btn span{display:none}
+.flip .transport{padding:4px;gap:0;flex-wrap:nowrap}
+.flip .tg{padding:2px 7px;min-height:40px;gap:5px}
+.flip .tg.grow{flex:0 0 auto;margin-left:auto}
+.flip .lbl{font-size:9px;letter-spacing:.12em}
+.flip select{padding:7px 4px;font-size:12px}
+.flip .btn{padding:8px 10px;font-size:11px}
+.flip .btn.play{width:56px;height:40px}
+.flip .btn.rec{height:40px}
+.flip .lcd{font-size:16px;padding:8px 6px;min-width:62px}
+.flip .num{width:52px;padding:8px 2px;font-size:14px}
+.flip .fo{display:inline-block;padding:8px 10px;min-width:36px}
+.flip .views{display:flex;gap:6px;align-items:center}
+.flip .views .view{flex:0 0 auto;padding:9px 16px}
+.flip .vk{font:600 10px/1 var(--f-mono);color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:3px 5px}
+.flip .fstat{margin-left:auto;display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.12em}
+.flip .fstat b{color:var(--acc);font-weight:600;padding:5px 8px;border:1px solid var(--line);border-radius:4px}
+.flip .fstat i{font-style:normal;color:var(--faint);padding:5px 8px;border:1px solid var(--line);border-radius:4px}
+.flip .fstat i.on{color:var(--ink);background:var(--acc-2);border-color:var(--acc-2)}
+.flip .fstat i#fs-rec.on{background:var(--rec);border-color:var(--rec);color:#1a0303}
+.flip .deck,.flip .lower{display:contents}
+.flip .panel{padding:8px 10px;gap:6px;min-height:0;overflow:hidden}
+.flip .ph h2{font-size:12px}
+/* pattern */
+.flip .chords{gap:4px}
+.flip .chord{padding:4px 8px;gap:0 8px;grid-template-columns:auto minmax(0,1fr);align-items:baseline}
+.flip .chord .n{font-size:14px;order:-1}
+.flip .chord .d{font-size:9px}
+.flip .grid-wrap{overflow:hidden}
+.flip .grid{min-width:0;gap:2px}
+.flip .row{grid-template-columns:92px repeat(16,minmax(0,1fr));gap:2px}
+.flip .rh{grid-template-columns:minmax(0,1fr) 18px;padding-right:4px}
+.flip .rh input[type=range]{display:none}
+.flip .trk{font-size:10px;padding:3px 6px}
+.flip .dice{width:18px;height:18px;font-size:11px}
+.flip .cell{height:18px;border-radius:3px;font-size:9px}
+.flip .row.nums .cell-n{font-size:9px;padding:0}
+.flip .under{gap:6px 10px}
+.flip .flipname{max-width:200px;font-size:11px}
+/* booth */
+.flip .panel[data-view="booth"]{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);grid-template-rows:auto auto auto auto auto minmax(0,1fr) auto;gap:6px 12px}
+.flip .panel[data-view="booth"]>.ph{grid-column:1/-1;grid-row:1}
+.flip .panel[data-view="booth"]>.warn{grid-column:1/-1;grid-row:2;font-size:11px;margin:0}
+.flip .panel[data-view="booth"]>.msg{grid-column:1/-1;grid-row:3;margin:0}
+.flip .pitch{grid-column:1;grid-row:4;height:170px}
+.flip .readout{grid-column:1;grid-row:5}
+.flip .big{font-size:30px}
+.flip .sub{font-size:10px}
+.flip .panel[data-view="booth"]>.booth-row{grid-column:1;grid-row:6;align-self:start}
+.flip .panel[data-view="booth"]>.ctls{grid-column:2;grid-row:4/7;align-content:start;gap:4px 12px}
+.flip .panel[data-view="booth"]>.file-line{grid-column:1/-1;grid-row:7;padding-top:6px;gap:6px}
+.flip .ctl{gap:2px}
+.flip input[type=range]{height:26px}
+.flip input[type=range]::-webkit-slider-thumb{width:18px;height:22px;margin-top:-9px}
+.flip input[type=range]::-moz-range-thumb{width:18px;height:22px}
+/* pads */
+.flip .panel[data-view="pads"]{grid-template-rows:auto minmax(0,1fr)}
+.flip .panel[data-view="pattern"]{align-content:start}
+.flip .pads{gap:8px;height:100%}
+.flip .pad-hit{aspect-ratio:auto;height:100%;min-height:110px;padding:10px 12px}
+.flip .pad-hit .k{font-size:16px;font-weight:700;color:var(--acc-2)}
+.flip .pad-hit .nm{font-size:14px}
+.flip .mini{width:30px;height:30px}
+/* mix */
+.flip .master{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);align-content:start}
+.flip .master>.ph:first-child{grid-column:1;grid-row:1}
+.flip .master>.ctls{grid-column:1;grid-row:2;align-self:start;grid-template-columns:minmax(0,1fr)}
+.flip .master>.ph:nth-child(3){grid-column:2;grid-row:1}
+.flip .master>.takes{grid-column:2;grid-row:2;align-self:start}
+.flip .takes{max-height:290px;overflow:auto}
+
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
 }
@@ -205,6 +291,8 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
     <div class="styles" role="group" aria-label="Sound template">
       <button class="style-btn" data-style="glitter" aria-pressed="true"><b>✦ GLITTER</b><span>pluggnb · rage · halftime — Nettspend lane</span></button>
       <button class="style-btn" data-style="jerk" aria-pressed="false"><b>JERK</b><span>NY jerk · plugg · degraded chops — xaviersobased lane</span></button>
+      <button class="style-btn" data-style="che" aria-pressed="false"><b>CHE</b><span>dark jerk · rage stabs · blown-out 808s — Che lane</span></button>
+      <button class="style-btn" data-style="prttifun" aria-pressed="false"><b>PRTTIFUN</b><span>bubblegum plugg · sped-up chops · flute — Prttifun lane</span></button>
     </div>
     <canvas class="scope" id="scope" aria-label="Output spectrum"></canvas>
   </header>
@@ -220,14 +308,16 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
     </div>
     <div class="tg">
       <label class="lbl" for="bpm">BPM</label>
+      <button class="btn fo" id="bpmDn" aria-label="Slower">−</button>
       <input class="num" id="bpm" type="number" min="60" max="200" step="1" value="150">
+      <button class="btn fo" id="bpmUp" aria-label="Faster">+</button>
     </div>
     <div class="tg">
       <label class="lbl" for="key">Key</label>
       <select id="key"></select>
       <select id="mode" aria-label="Scale"></select>
     </div>
-    <div class="tg">
+    <div class="tg swing">
       <label class="lbl" for="swing">Swing</label>
       <input id="swing" type="range" min="0" max="30" step="1" value="8" style="width:90px">
       <output id="swing-out">8%</output>
@@ -240,8 +330,18 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
     </div>
   </section>
 
+  <nav class="views" aria-label="Views">
+    <span class="vk">L1</span>
+    <button class="btn view" data-view="pattern" aria-pressed="true">Pattern</button>
+    <button class="btn view" data-view="booth" aria-pressed="false">Booth</button>
+    <button class="btn view" data-view="pads" aria-pressed="false">Pads</button>
+    <button class="btn view" data-view="mix" aria-pressed="false">Mix</button>
+    <span class="vk">R1</span>
+    <span class="fstat"><b id="fs-scene">HOOK</b><i id="fs-mic">MIC</i><i id="fs-rec">REC</i><i id="fs-led">LED</i></span>
+  </nav>
+
   <main class="deck">
-    <section class="panel" aria-label="Sequencer">
+    <section class="panel" data-view="pattern" aria-label="Sequencer">
       <div class="ph">
         <h2>Pattern <small id="styleTag">GLITTER</small></h2>
         <p class="hint">Click a chord to change it · <kbd>shift</kbd>-click goes back</p>
@@ -268,7 +368,7 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
       </div>
     </section>
 
-    <section class="panel" aria-label="Vocal booth">
+    <section class="panel" data-view="booth" aria-label="Vocal booth">
       <div class="ph">
         <h2>Vocal booth <small>auto-tune</small></h2>
         <div class="booth-row">
@@ -276,7 +376,7 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
           <button class="btn" id="monitor" aria-pressed="true">Monitor</button>
         </div>
       </div>
-      <p class="warn" id="hpWarn">Wear headphones — with speakers the mic will feed back through the tuner.</p>
+      <p class="warn" id="hpWarn">Wear headphones — through speakers the mic feeds back into the tuner.</p>
       <p class="msg" id="boothMsg" role="status"></p>
       <canvas class="pitch" id="pitch" aria-label="Pitch trace: grey is your voice, bright is the tuned output"></canvas>
       <div class="readout">
@@ -325,14 +425,14 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
   </main>
 
   <section class="lower">
-    <section class="panel" aria-label="Sample pads">
+    <section class="panel" data-view="pads" aria-label="Sample pads">
       <div class="ph">
         <h2>Pads <small>keys 1–8</small></h2>
         <p class="hint">Drop an audio file on a pad to load it · ● records 2 s of your tuned vocal as an ad-lib</p>
       </div>
       <div class="pads" id="pads"></div>
     </section>
-    <section class="panel master" aria-label="Master and takes">
+    <section class="panel master" data-view="mix" aria-label="Master and takes">
       <div class="ph"><h2>Master</h2></div>
       <div class="ctls">
         <div class="ctl"><div class="tl"><label class="lbl" for="m-vol">Volume</label><output id="m-vol-out"></output></div><input type="range" id="m-vol" min="0" max="100" step="1"></div>
@@ -346,7 +446,7 @@ footer{font-size:12px;color:var(--faint);display:flex;gap:16px;flex-wrap:wrap;ju
   </section>
 
   <footer>
-    <span><kbd>Space</kbd> play/stop · <kbd>G</kbd> generate · <kbd>1</kbd>–<kbd>8</kbd> pads · <kbd>R</kbd> record · <kbd>M</kbd> mic</span>
+    <span><kbd>Space</kbd> play/stop · <kbd>G</kbd> generate · <kbd>N</kbd> next artist · <kbd>1</kbd>–<kbd>8</kbd> pads · <kbd>I</kbd> <kbd>V</kbd> <kbd>H</kbd> <kbd>B</kbd> scenes · hold <kbd>F</kbd> filter · <kbd>R</kbd> record · <kbd>M</kbd> mic</span>
     <span>Everything is synthesized in your browser — no samples are downloaded.</span>
   </footer>
 </div>
@@ -628,7 +728,7 @@ const ROMAN = ['I','II','III','IV','V','VI','VII'];
 
 const STYLES = {
   glitter: {
-    label: 'GLITTER', bpm: [142, 162], swing: [0.05, 0.14],
+    label: 'GLITTER', tag: 'halftime', family: 'half', bpm: [142, 162], swing: [0.05, 0.14],
     modes: [['major', 3], ['lydian', 2], ['minor', 2], ['dorian', 1]],
     progs: {
       major:    [[3,2,5,0],[0,5,3,4],[3,4,2,5],[0,2,3,3],[5,3,0,4],[3,3,0,0],[0,4,5,3],[1,4,0,0]],
@@ -640,16 +740,19 @@ const STYLES = {
     ninth: 0.6,
     kit: { kickHi: 190, kickLo: 48, kickDec: 0.26, kickLvl: 0.55, snareTone: 210, snareDec: 0.17, snareHP: 1400, clap: 0.55,
            hatDec: 0.045, hatHP: 7600, ohatDec: 0.32, perc: 'rim', drive: 0.45, dec808: 1.25, glide: 0.075 },
-    lead: 'bell', pad: 'glass', chopVowels: [0, 1, 3], flipVowel: 3, crush: 10, hold: 2, wow: 1,
+    lead: 'bell', leadBase: 67, pad: 'glass', padLP: 6500, padLFO: 0, chopVowels: [0, 1, 3], chopOct: 0,
+    flipVowel: 3, flipLeadVowels: [0, 1], flipLo: 55, flipLead: 67, flipLP: 5200, crush: 10, hold: 2, wow: 1,
+    duckRel: 0.08, fillSnare: 14,
     labels: { perc: 'RIM', keys: 'KEYS', lead: 'BELL' },
     mix: { kick: .7, bass: .9, snare: .8, hat: .62, ohat: .5, perc: .55, keys: .62, lead: .7, chop: .55, flip: .4 },
     rev: { snare: .16, hat: .04, ohat: .1, perc: .22, keys: .38, lead: .5, chop: .55, flip: .22 },
     dly: { lead: .26, chop: .3, perc: .1 },
     master: { lofi: 25, duck: 15, space: 100 },
     vocal: { retune: 0, amount: 100, pitch: 0, formant: 1.5, double: 45, dirt: 8, delay: 30, verb: 42 },
+    led: { a: [255, 92, 200], b: [168, 236, 255] },
   },
   jerk: {
-    label: 'JERK', bpm: [150, 180], swing: [0, 0.05],
+    label: 'JERK', tag: 'jerk bounce', family: 'jerk', bpm: [150, 180], swing: [0, 0.05],
     modes: [['minor', 3], ['phrygian', 2], ['harmonic', 2], ['dorian', 1]],
     progs: {
       minor:    [[0,0,5,5],[0,5,0,6],[0,0,0,0],[0,6,5,6],[5,5,0,0],[0,3,0,3]],
@@ -661,13 +764,67 @@ const STYLES = {
     ninth: 0.25,
     kit: { kickHi: 230, kickLo: 52, kickDec: 0.17, kickLvl: 0.7, snareTone: 240, snareDec: 0.11, snareHP: 1800, clap: 0.35,
            hatDec: 0.032, hatHP: 8600, ohatDec: 0.22, perc: 'snap', drive: 0.85, dec808: 1.6, glide: 0.06 },
-    lead: 'plugg', pad: 'wash', chopVowels: [0, 2, 4], flipVowel: 0, crush: 7, hold: 3, wow: 1.8,
+    lead: 'plugg', leadBase: 62, pad: 'wash', padLP: 1500, padLFO: 520, chopVowels: [0, 2, 4], chopOct: 0,
+    flipVowel: 0, flipLeadVowels: [0, 1], flipLo: 55, flipLead: 67, flipLP: 3600, crush: 7, hold: 3, wow: 1.8,
+    duckRel: 0.13, fillSnare: 15,
     labels: { perc: 'SNAP', keys: 'PAD', lead: 'LEAD' },
     mix: { kick: .8, bass: .9, snare: .78, hat: .58, ohat: .5, perc: .65, keys: .55, lead: .6, chop: .6, flip: .62 },
     rev: { snare: .1, hat: .03, ohat: .08, perc: .14, keys: .55, lead: .35, chop: .42, flip: .18 },
     dly: { lead: .18, chop: .28, perc: .14 },
     master: { lofi: 45, duck: 50, space: 90 },
     vocal: { retune: 0, amount: 100, pitch: 0, formant: 0, double: 22, dirt: 34, delay: 18, verb: 26 },
+    led: { a: [111, 208, 255], b: [220, 207, 255] },
+  },
+  // Che: dark, fast jerk with rage stabs; one or two chords, a ♭II lean, the 808 driven into the clipper,
+  // ghost snares dragged into the bar line, chops pitched down and reversed, a sub-octave drone for keys.
+  che: {
+    label: 'CHE', tag: 'dark rage', family: 'jerk', bpm: [158, 176], swing: [0, 0.04],
+    modes: [['phrygian', 3], ['minor', 3], ['harmonic', 2]],
+    progs: {
+      phrygian: [[0,1,0,1],[0,0,1,1],[0,0,0,0],[0,1,6,0],[0,5,1,0]],
+      minor:    [[0,0,0,0],[0,5,0,5],[0,0,6,6],[0,3,0,6],[5,5,0,0]],
+      harmonic: [[0,0,4,4],[0,4,0,4],[0,3,4,4],[0,0,0,0]],
+      major: [[5,5,3,3]], lydian: [[0,1,0,1]], dorian: [[0,3,0,3]],
+    },
+    ninth: 0.1,
+    kit: { kickHi: 270, kickLo: 44, kickDec: 0.2, kickLvl: 0.8, snareTone: 185, snareDec: 0.15, snareHP: 1100, clap: 0.7,
+           hatDec: 0.028, hatHP: 9200, ohatDec: 0.18, perc: 'snap', drive: 1.1, dec808: 1.05, glide: 0.05 },
+    lead: 'rage', leadBase: 62, pad: 'dark', padLP: 900, padLFO: 260, chopVowels: [3, 4], chopOct: -3,
+    flipVowel: 4, flipLeadVowels: [3, 4], flipLo: 43, flipLead: 62, flipLP: 2800, crush: 6, hold: 3, wow: 2.4,
+    duckRel: 0.16, fillSnare: 15,
+    labels: { perc: 'SNAP', keys: 'DRONE', lead: 'RAGE' },
+    mix: { kick: .85, bass: 1, snare: .85, hat: .5, ohat: .4, perc: .6, keys: .5, lead: .62, chop: .5, flip: .55 },
+    rev: { snare: .12, hat: .02, ohat: .06, perc: .1, keys: .6, lead: .3, chop: .5, flip: .2 },
+    dly: { lead: .22, chop: .3, perc: .16 },
+    master: { lofi: 55, duck: 65, space: 80 },
+    vocal: { retune: 0, amount: 100, pitch: 0, formant: -1, double: 30, dirt: 55, delay: 22, verb: 30 },
+    led: { a: [255, 61, 90], b: [255, 200, 168] },
+  },
+  // Prttifun: bubblegum plugg. Bright major / lydian pop loops with 9ths, bouncy jerk drums under a dense
+  // bell-style melody played by a breathy flute, chipmunk chops an octave up, a clean sped-up choir flip.
+  prttifun: {
+    label: 'PRTTIFUN', tag: 'sped up', family: 'jerk', bpm: [150, 170], swing: [0.04, 0.12],
+    modes: [['major', 4], ['lydian', 2], ['dorian', 1], ['minor', 1]],
+    progs: {
+      major:    [[0,4,5,3],[3,4,0,0],[5,3,0,4],[1,4,0,0],[0,5,1,4],[3,3,4,4],[0,2,3,4]],
+      lydian:   [[0,1,0,1],[0,4,5,1],[3,1,0,0]],
+      dorian:   [[0,3,0,3],[0,6,3,0]],
+      minor:    [[0,5,2,6],[5,3,0,6]],
+      phrygian: [[0,1,0,1]], harmonic: [[0,3,4,4]],
+    },
+    ninth: 0.7,
+    kit: { kickHi: 200, kickLo: 50, kickDec: 0.22, kickLvl: 0.6, snareTone: 235, snareDec: 0.12, snareHP: 2200, clap: 0.5,
+           hatDec: 0.04, hatHP: 8000, ohatDec: 0.28, perc: 'snap', drive: 0.35, dec808: 1.3, glide: 0.08 },
+    lead: 'flute', leadBase: 74, pad: 'glass', padLP: 8500, padLFO: 0, chopVowels: [1, 2], chopOct: 12,
+    flipVowel: 2, flipLeadVowels: [2, 1], flipLo: 67, flipLead: 79, flipLP: 7500, crush: 12, hold: 1, wow: 0.6,
+    duckRel: 0.1, fillSnare: 15,
+    labels: { perc: 'SNAP', keys: 'KEYS', lead: 'FLUTE' },
+    mix: { kick: .65, bass: .85, snare: .75, hat: .6, ohat: .5, perc: .5, keys: .7, lead: .72, chop: .65, flip: .5 },
+    rev: { snare: .18, hat: .05, ohat: .12, perc: .2, keys: .5, lead: .55, chop: .6, flip: .35 },
+    dly: { lead: .3, chop: .34, perc: .1 },
+    master: { lofi: 12, duck: 25, space: 120 },
+    vocal: { retune: 0, amount: 100, pitch: 3, formant: 3, double: 60, dirt: 4, delay: 36, verb: 55 },
+    led: { a: [180, 140, 255], b: [168, 255, 217] },
   },
 };
 
@@ -718,31 +875,33 @@ function voiceChord(ch, lo) {
 }
 
 /* ---------- pattern generators (one per row) ---------- */
+const JERK_KICKS = [[0,3,7,10,13],[0,3,6,10,11],[0,5,7,10,14],[0,3,8,11,14],[0,2,7,10,15]];
 const GEN = {
-  kick(st, R) {
+  kick(st, R, P) {
     const a = Array(16).fill(0); a[0] = 1;
-    if (st === 'glitter') {
+    if (P.family === 'half') {
       shuffle([3, 6, 7, 10, 11, 13, 14], R).slice(0, 1 + Math.floor(R() * 3)).forEach(i => a[i] = 1);
     } else {
-      pick([[0,3,7,10,13],[0,3,6,10,11],[0,5,7,10,14],[0,3,8,11,14],[0,2,7,10,15]], R).forEach(i => a[i] = 1);
-      if (chance(.4, R)) a[pick([5, 9, 13], R)] = 1;
+      pick(JERK_KICKS, R).forEach(i => a[i] = 1);
+      if (chance(st === 'che' ? .7 : st === 'prttifun' ? .3 : .4, R)) a[pick([5, 9, 13], R)] = 1;
+      if (st === 'che' && chance(.5, R)) a[pick([1, 2, 15], R)] = 1;        // stumbling double kick
     }
     return a;
   },
   bass(st, R, P, p) {
     const a = Array(16).fill(null);
-    for (let i = 0; i < 16; i++) if (p.kick[i] && (st === 'glitter' || i === 0 || R() < 0.7)) a[i] = { s: 0, slide: false };
-    if (chance(.6, R)) {
-      const i = pick(st === 'glitter' ? [9, 12, 14, 15] : [6, 9, 14, 15], R);
-      if (!a[i]) a[i] = { s: pick([7, 4, 7, 2], R), slide: chance(.6, R) };
+    for (let i = 0; i < 16; i++) if (p.kick[i] && (P.family === 'half' || i === 0 || R() < 0.7)) a[i] = { s: 0, slide: false };
+    if (chance(st === 'che' ? .85 : .6, R)) {
+      const i = pick(P.family === 'half' ? [9, 12, 14, 15] : [6, 9, 14, 15], R);
+      if (!a[i]) a[i] = { s: pick(st === 'che' ? [7, 2, 7, 1] : [7, 4, 7, 2], R), slide: chance(.6, R) };
     }
     const on = a.map((x, i) => x ? i : -1).filter(i => i >= 0);
-    if (on.length > 1 && chance(.5, R)) a[on[on.length - 1]] = { s: pick([7, 4], R), slide: true };
+    if (on.length > 1 && chance(st === 'che' ? .7 : .5, R)) a[on[on.length - 1]] = { s: pick([7, 4], R), slide: true };
     return a;
   },
-  snare(st, R) {
+  snare(st, R, P) {
     const a = Array(16).fill(0);
-    if (st === 'glitter') {
+    if (P.family === 'half') {
       a[8] = 1;
       if (chance(.35, R)) a[pick([13, 15, 11], R)] = 2;
       if (chance(.2, R)) a[pick([3, 6], R)] = 2;
@@ -751,52 +910,60 @@ const GEN = {
       if (chance(.55, R)) b[1] = pick([11, 13, 14], R);
       if (chance(.3, R)) b[0] = pick([3, 5], R);
       b.forEach(i => a[i] = 1);
-      if (chance(.5, R)) a[pick([7, 9, 15], R)] = pick([1, 2], R);
-      if (chance(.35, R)) a[pick([1, 10], R)] = 2;
+      if (chance(st === 'prttifun' ? .35 : .5, R)) a[pick([7, 9, 15], R)] = pick([1, 2], R);
+      if (chance(st === 'che' ? .6 : .35, R)) a[pick([1, 10], R)] = 2;
+      if (st === 'che' && chance(.4, R)) { const i = pick([14, 15], R); a[i] = a[i] || 2; a[i - 1] = a[i - 1] || 2; }   // ghosts dragged into the bar line
     }
     return a;
   },
-  hat(st, R) {
+  hat(st, R, P) {
     const a = Array(16).fill(0);
-    if (st === 'glitter') {
+    if (P.family === 'half' || st === 'prttifun') {
       for (let i = 0; i < 16; i += 2) a[i] = 1;
       for (let i = 1; i < 16; i += 2) if (chance(.2, R)) a[i] = 1;
       shuffle([3, 5, 7, 11, 13, 15, 6, 14], R).slice(0, 2 + Math.floor(R() * 2)).forEach(i => a[i] = pick([2, 3, 3, 4], R));
     } else {
-      const dense = chance(.55, R);
+      const dense = chance(st === 'che' ? .75 : .55, R);
       for (let i = 0; i < 16; i++) a[i] = (dense || i % 2 === 0) ? 1 : 0;
       for (let i = 0; i < 16; i++) if (a[i] && chance(.12, R)) a[i] = 0;
-      shuffle([3, 7, 11, 15, 14], R).slice(0, 1 + Math.floor(R() * 2)).forEach(i => a[i] = pick([2, 2, 3], R));
+      shuffle([3, 7, 11, 15, 14], R).slice(0, 1 + Math.floor(R() * 2)).forEach(i => a[i] = pick(st === 'che' ? [2, 4, 3] : [2, 2, 3], R));
     }
     return a;
   },
-  ohat(st, R) {
+  ohat(st, R, P) {
     const a = Array(16).fill(0);
-    if (st === 'glitter') { if (chance(.7, R)) a[pick([6, 14, 10], R)] = 1; }
+    if (P.family === 'half') { if (chance(.7, R)) a[pick([6, 14, 10], R)] = 1; }
     else pick([[2, 10], [6, 14], [2, 6, 10, 14], [10]], R).forEach(i => a[i] = 1);
     return a;
   },
-  perc(st, R) {
+  perc(st, R, P) {
     const a = Array(16).fill(0);
-    if (st === 'glitter') {
+    if (P.family === 'half') {
       if (chance(.7, R)) a[11] = 1;
       if (chance(.5, R)) a[pick([3, 5], R)] = 1;
       if (chance(.3, R)) a[15] = 1;
-    } else shuffle([1, 3, 6, 9, 11, 14, 15], R).slice(0, 2 + Math.floor(R() * 3)).forEach(i => a[i] = 1);
+    } else shuffle([1, 3, 6, 9, 11, 14, 15], R).slice(0, (st === 'che' ? 3 : 2) + Math.floor(R() * 3)).forEach(i => a[i] = 1);
     return a;
   },
   keys(st, R) {
     const a = Array(16).fill(0); a[0] = 1;
     if (st === 'glitter' && chance(.45, R)) a[pick([10, 11, 6], R)] = 1;
+    if (st === 'prttifun' && chance(.6, R)) a[pick([8, 10, 12], R)] = 1;    // bouncy second stab
     return a;
   },
-  lead(st, R) {
+  lead(st, R, P) {
     const a = Array(16).fill(null);
-    if (st === 'glitter') {
+    if (P.family === 'half' || st === 'prttifun') {
       const r = pick([[0,2,4,6,8,10,12,14],[0,3,6,8,11,14],[0,2,3,6,8,10,11,14],[0,1,2,3,8,9,10,11],[0,3,6,9,12],[0,6,8,14],[0,2,4,7,10,12]], R);
-      const m = pick([[0,2,4,6],[4,6,7,9],[9,7,4,2],[4,7,4,9],[7,9,7,11],[2,4,7,4],[0,4,7,9]], R);
+      const m = pick(st === 'prttifun'
+        ? [[0,4,7,9],[7,9,11,9],[4,7,9,11],[9,7,4,7],[2,4,7,9],[7,4,2,4],[0,2,4,7]]
+        : [[0,2,4,6],[4,6,7,9],[9,7,4,2],[4,7,4,9],[7,9,7,11],[2,4,7,4],[0,4,7,9]], R);
       const rev = chance(.3, R);
       r.forEach((s, i) => { const j = i % m.length; a[s] = m[rev ? m.length - 1 - j : j]; });
+    } else if (st === 'che') {
+      const r = pick([[0,3,6,10,12],[0,8],[0,6,8,14],[0,4,8,12],[0,2,8,10,12]], R);
+      const m = pick([[0,0,1,0],[7,7,6,7],[0,1,0,-1],[4,4,1,0],[0,0,0,7],[7,6,4,1]], R);
+      r.forEach((s, i) => a[s] = m[i % m.length]);
     } else {
       const r = pick([[0,3,6,10,12],[0,2,8,10],[0,6,8,11,14],[0,3,6,8,11,14],[0,4,7,8,12]], R);
       const m = pick([[4,4,2,0],[0,0,2,4],[7,6,4,2],[4,2,4,6],[2,2,4,4],[7,7,4,4]], R);
@@ -806,33 +973,34 @@ const GEN = {
   },
   chop(st, R, P) {
     const a = Array(16).fill(null), V = P.chopVowels;
-    if (st === 'glitter') {
-      shuffle([2, 5, 7, 9, 12, 13, 15], R).slice(0, 2 + Math.floor(R() * 3)).forEach(i =>
-        a[i] = { s: pick([4, 6, 7, 9, 2], R), v: pick(V, R), len: pick([1, 2, 2, 3], R), rev: false });
+    if (P.family === 'half' || st === 'prttifun') {
+      const n = (st === 'prttifun' ? 3 : 2) + Math.floor(R() * 3);
+      shuffle([2, 5, 7, 9, 12, 13, 15, 10], R).slice(0, n).forEach(i =>
+        a[i] = { s: pick([4, 6, 7, 9, 2], R), v: pick(V, R), len: pick(st === 'prttifun' ? [1, 1, 2] : [1, 2, 2, 3], R), rev: false });
     } else {
       pick([[[4,5]],[[12,13,14]],[[4,5],[12,13]],[[6,7],[14,15]],[[2,3,4]]], R).forEach(g => {
-        const s = pick([4, 2, 7, 0], R), v = pick(V, R), rev = chance(.3, R);
+        const s = pick([4, 2, 7, 0], R), v = pick(V, R), rev = chance(st === 'che' ? .5 : .3, R);
         g.forEach(i => a[i] = { s, v, len: 1, rev });
       });
-      if (chance(.5, R)) { const i = pick([9, 10], R); a[i] = { s: pick([4, 7], R), v: pick(V, R), len: 3, rev: chance(.5, R) }; }
+      if (chance(.5, R)) { const i = pick([9, 10], R); a[i] = { s: pick([4, 7], R), v: pick(V, R), len: 3, rev: chance(st === 'che' ? .7 : .5, R) }; }
     }
     return a;
   },
-  flip(st, R) {
+  flip(st, R, P) {
     const a = Array(16).fill(null);
-    if (st === 'glitter') {
+    if (P.family === 'half') {
       for (let i = 0; i < 16; i += 4) a[i] = { k: i, rev: false };
       if (chance(.6, R)) a[pick([12, 8], R)] = { k: pick([0, 4], R), rev: false };
       if (chance(.5, R)) a[14] = { k: pick([12, 8], R), rev: chance(.5, R) };
       if (chance(.4, R)) a[6] = { k: 6, rev: false };
     } else {
       const trig = [0, pick([3, 4], R), pick([6, 7, 8], R), 10, pick([12, 13], R), pick([14, 15], R)];
-      trig.forEach((i, j) => a[i] = { k: j === 0 ? 0 : pick([0, 4, 8, 12, 0, 8, 2, 6], R), rev: j > 0 && chance(.25, R) });
+      trig.forEach((i, j) => a[i] = { k: j === 0 ? 0 : pick([0, 4, 8, 12, 0, 8, 2, 6], R), rev: j > 0 && chance(st === 'che' ? .4 : .25, R) });
     }
     return a;
   },
 };
-const FILL_HAT = { glitter: [2, 3, 4, 4], jerk: [1, 2, 1, 3] };
+const FILL_HAT = { glitter: [2, 3, 4, 4], jerk: [1, 2, 1, 3], che: [2, 3, 4, 4], prttifun: [2, 3, 3, 4] };
 
 function genPattern(style, R) {
   const P = STYLES[style], p = {};
@@ -861,6 +1029,10 @@ function finalizeSong(s) { s.chords = s.prog.map(d => buildChord(s.mode, s.root,
    ===================================================================== */
 let ctx = null, audioReady = null, tuner = null;
 let styleKey = 'glitter';
+// ?flip: the Retroid Pocket Flip 2 build (handheld layout, stick LED rings through flip2/server.py);
+// ?remote: also take commands from that server, so the page can be driven over ssh.
+const FLIP = /[?&]flip\b/.test(location.search), REMOTE = /[?&]remote\b/.test(location.search);
+const ZOOM = FLIP ? parseFloat(document.documentElement.style.zoom) || 2 : 1;   // set in <head>: a 960px-wide layout
 let song = generateSong('glitter', randSeed());
 const T = {};              // track channel nodes
 const N = {};              // master / bus nodes
@@ -1058,8 +1230,8 @@ function applyMix() {
     t.ds.gain.setTargetAtTime(P.dly[tr.id] || 0, now(), 0.05);
   }
   T.bass.drive.gain.setTargetAtTime(1 + P.kit.drive * 6, now(), 0.05);
-  T.keys.lp.frequency.setTargetAtTime(P.pad === 'glass' ? 6500 : 1500, now(), 0.1);
-  T.keys.lfoG.gain.setTargetAtTime(P.pad === 'glass' ? 0 : 520, now(), 0.1);
+  T.keys.lp.frequency.setTargetAtTime(P.padLP, now(), 0.1);
+  T.keys.lfoG.gain.setTargetAtTime(P.padLFO, now(), 0.1);
 }
 function applyMaster() {
   if (!ctx) return;
@@ -1133,7 +1305,7 @@ function duck(t) {
   const D = mst.duck / 100; if (D < 0.01) return;
   const g = N.duck.gain; g.cancelScheduledValues(t);
   g.setTargetAtTime(1 - D, t, 0.004);
-  g.setTargetAtTime(1, t + 0.03, song.style === 'jerk' ? 0.13 : 0.08);
+  g.setTargetAtTime(1, t + 0.03, STYLES[song.style].duckRel);
 }
 
 const V = {};
@@ -1230,8 +1402,22 @@ function washVoice(t, m, dur, d) {
     o.connect(g); o.start(t); o.stop(t + dur + 1.4);
   }
 }
-V.keys = (t, notes, dur) => {
-  const fn = STYLES[song.style].pad === 'glass' ? glassVoice : washVoice;
+function darkVoice(t, m, dur, d) {
+  // Che's drone: three detuned saws and a sine on the same low note, slow swell, long tail
+  const f = mtof(m), g = ctx.createGain();
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.04, t + 0.12); g.gain.setValueAtTime(0.04, t + Math.max(0.13, dur - 0.05)); g.gain.setTargetAtTime(0, t + dur, 0.3);
+  g.connect(d);
+  for (const det of [-9, 0, 8]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = det; o.connect(g); o.start(t); o.stop(t + dur + 1.6); }
+  const sub = ctx.createOscillator(), sg = ctx.createGain(); sub.frequency.value = f; sg.gain.value = 0.6; sub.connect(sg).connect(g); sub.start(t); sub.stop(t + dur + 1.6);
+}
+V.keys = (t, notes, dur, ch) => {
+  const P = STYLES[song.style];
+  if (P.pad === 'dark') {   // root, fifth and octave down at C2–B2: a power drone instead of the chord
+    const r = 36 + (((ch.rootPc - 36) % 12) + 12) % 12;
+    for (const m of [r, r + 7, r + 12]) darkVoice(t, m, dur, T.keys.in);
+    return;
+  }
+  const fn = P.pad === 'glass' ? glassVoice : washVoice;
   for (const m of notes) fn(t, m, dur, T.keys.in);
 };
 function bell(t, m, lvl, dest) {
@@ -1262,8 +1448,47 @@ function pluggLead(t, m, dur, dest) {
   const end = t + dur + 0.4;
   for (const o of [o1, o2, vib]) { o.start(t); o.stop(end); }
 }
+function rageLead(t, m, dur, dest) {
+  // four saws an octave up, screeching down into the note through a resonant low-pass that slams shut
+  const f = mtof(m + 12);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 6;
+  lp.frequency.setValueAtTime(9000, t); lp.frequency.exponentialRampToValueAtTime(1600, t + 0.12); lp.frequency.setTargetAtTime(900, t + 0.12, 0.25);
+  const sh = ctx.createWaveShaper(); sh.curve = makeCurve(2.5);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.085, t + 0.003); g.gain.setTargetAtTime(0.045, t + 0.003, 0.09); g.gain.setTargetAtTime(0, t + dur, 0.04);
+  lp.connect(sh).connect(g).connect(dest);
+  const end = t + dur + 0.35;
+  for (const det of [-19, -7, 6, 18]) {
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.detune.value = det;
+    o.frequency.setValueAtTime(f * 1.5, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.05);
+    o.connect(lp); o.start(t); o.stop(end);
+  }
+  const sq = ctx.createOscillator(), sg = ctx.createGain(); sq.type = 'square'; sq.frequency.value = f / 2; sg.gain.value = 0.3;
+  sq.connect(sg).connect(lp); sq.start(t); sq.stop(end);
+}
+function fluteLead(t, m, dur, dest) {
+  // sine with a touch of octave, late vibrato and a breath of band-passed noise on the attack
+  const f = mtof(m), g = ctx.createGain();
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.11, t + 0.03); g.gain.setTargetAtTime(0.07, t + 0.03, 0.12); g.gain.setTargetAtTime(0, t + dur, 0.1);
+  g.connect(dest);
+  const o = ctx.createOscillator(); o.frequency.value = f;
+  const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.type = 'triangle'; o2.frequency.value = f * 2; g2.gain.value = 0.18;
+  const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 5.2;
+  vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.012, t + 0.3);
+  vib.connect(vg); vg.connect(o.frequency);
+  o.connect(g); o2.connect(g2).connect(g);
+  const nz = ctx.createBufferSource(); nz.buffer = noiseBuf;
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * 2; bp.Q.value = 8;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(0.06, t + 0.02); ng.gain.setTargetAtTime(0.012, t + 0.02, 0.08); ng.gain.setTargetAtTime(0, t + dur, 0.05);
+  nz.connect(bp).connect(ng).connect(dest);
+  const end = t + dur + 0.5;
+  o.start(t); o2.start(t); vib.start(t); nz.start(t, Math.random()); o.stop(end); o2.stop(end); vib.stop(end); nz.stop(end);
+}
 V.lead = (t, m, stepDur) => {
-  if (STYLES[song.style].lead === 'bell') bell(t, m, 0.16, T.lead.in);
+  const P = STYLES[song.style];
+  if (P.lead === 'bell') bell(t, m, 0.16, T.lead.in);
+  else if (P.lead === 'rage') rageLead(t, m, stepDur * 1.6, T.lead.in);
+  else if (P.lead === 'flute') fluteLead(t, m, stepDur * 2.4, T.lead.in);
   else pluggLead(t, m, stepDur * 2.2, T.lead.in);
 };
 function playVowel(t, m, v, dur, rev, dest, lvl, fall = true) {
@@ -1279,7 +1504,7 @@ function playVowel(t, m, v, dur, rev, dest, lvl, fall = true) {
   const off = rev ? Math.max(0, buf.duration - dur * rate - 0.06) : 0.03;
   src.connect(g).connect(dest); src.start(t, off); src.stop(t + dur + 0.02);
 }
-V.chop = (t, m, v, dur, rev) => playVowel(t, m, v, dur, rev, T.chop.in, 0.45);
+V.chop = (t, m, v, dur, rev) => playVowel(t, m + STYLES[song.style].chopOct, v, dur, rev, T.chop.in, 0.45);
 V.flip = (t, bar, k, dur, rev) => {
   let buf, rbuf, rate, sliceSec;
   if (flip.user) {
@@ -1342,13 +1567,13 @@ async function renderFlip(s) {
   const R = rng(s.seed ^ 0x5eed);
   const bus = oc.createGain(); bus.gain.value = 0.9;
   const hp = oc.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 220;
-  const lp = oc.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = s.style === 'glitter' ? 5200 : 3600;
+  const lp = oc.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = P.flipLP;
   bus.connect(hp).connect(lp).connect(oc.destination);
-  const leadR = pick(s.style === 'glitter' ? [[0,3,6,10,12],[0,4,6,8,12,14],[2,6,8,12]] : [[0,6,8,12],[0,3,8,11],[4,6,12,14]], R);
+  const leadR = pick(P.family === 'half' || s.style === 'prttifun' ? [[0,3,6,10,12],[0,4,6,8,12,14],[2,6,8,12]] : [[0,6,8,12],[0,3,8,11],[4,6,12,14]], R);
   const leadM = pick([[4,2,0,2],[7,4,2,4],[2,4,6,4],[4,4,2,0]], R);
   for (let b = 0; b < 4; b++) {
     const ch = s.chords[b], t0 = b * bd;
-    const notes = voiceChord(ch, 55);
+    const notes = voiceChord(ch, P.flipLo);
     notes.forEach((m, i) => {
       const src = oc.createBufferSource(); src.buffer = vowels[P.flipVowel]; src.loop = true; src.loopStart = 0.4; src.loopEnd = 1.4;
       src.playbackRate.value = Math.pow(2, (m - 60) / 12); src.detune.value = (R() - 0.5) * 16;
@@ -1357,9 +1582,9 @@ async function renderFlip(s) {
       src.connect(g).connect(pan).connect(bus); src.start(t0, 0.05); src.stop(t0 + bd + 0.01);
     });
     leadR.forEach((st, i) => {
-      const m = noteFor(s, ch.deg, leadM[i % leadM.length], 67), t = t0 + st * stepDur, dur = stepDur * 2.2;
+      const m = noteFor(s, ch.deg, leadM[i % leadM.length], P.flipLead), t = t0 + st * stepDur, dur = stepDur * 2.2;
       const rate = Math.pow(2, (m - 60) / 12);
-      const src = oc.createBufferSource(); src.buffer = vowels[i % 2 ? 1 : 0];
+      const src = oc.createBufferSource(); src.buffer = vowels[P.flipLeadVowels[i % 2]];
       src.playbackRate.setValueAtTime(rate, t); src.playbackRate.setValueAtTime(rate, t + dur * 0.6); src.playbackRate.linearRampToValueAtTime(rate * 0.95, t + dur);
       const g = oc.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.28, t + 0.01); g.gain.setValueAtTime(0.28, t + dur - 0.03); g.gain.linearRampToValueAtTime(0, t + dur);
       src.connect(g).connect(bus); src.start(t, 0.03); src.stop(t + dur + 0.01);
@@ -1421,15 +1646,15 @@ function playStep(gs, t) {
     V.bass(t, noteFor(s, ch.deg, b.s, 33), b.slide); duck(t);
   }
   if (p.snare[st]) V.snare(t, p.snare[st] === 2 ? 0.35 : 1);
-  else if (fill && st === (s.style === 'jerk' ? 15 : 14)) V.snare(t, 0.4);
+  else if (fill && st === P.fillSnare) V.snare(t, 0.4);
   let h = p.hat[st];
   if (fill && st >= 12) h = Math.max(h, FILL_HAT[s.style][st - 12]);
   if (h) V.hat(t + sw, h, stepDur);
   if (p.ohat[st]) V.ohat(t + sw);
   if (p.perc[st]) V.perc(t + sw);
-  if (p.keys[st]) V.keys(t, voiceChord(ch, 52), (nextOn(p.keys, st) - st) * stepDur);
+  if (p.keys[st]) V.keys(t, voiceChord(ch, 52), (nextOn(p.keys, st) - st) * stepDur, ch);
   const l = p.lead[st];
-  if (l != null) V.lead(t, noteFor(s, ch.deg, l, P.lead === 'bell' ? 67 : 62), stepDur);
+  if (l != null) V.lead(t, noteFor(s, ch.deg, l, P.leadBase), stepDur);
   const c = p.chop[st];
   if (c) V.chop(t + sw * 0.5, noteFor(s, ch.deg, c.s, 57), c.v, c.len * stepDur, c.rev);
   const f = p.flip[st];
@@ -1581,6 +1806,7 @@ async function toggleVocalFile() {
 /* =====================================================================
    PADS
    ===================================================================== */
+const PAD_KEYS_FLIP = ['A', 'B', 'X', 'Y', '↑', '→', '↓', '←'];   // face buttons, then the d-pad
 const PADS = [
   { id: 'riser',   name: 'RISER' },
   { id: 'rev',     name: 'REV CRASH' },
@@ -1640,6 +1866,7 @@ async function triggerPad(i) {
   if (p.buf) { const s = ctx.createBufferSource(); s.buffer = p.buf; s.connect(N.fx); s.start(t); }
   else FX[p.id](t);
   const b = $$('.pad-hit')[i]; b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 140);
+  led.flash = performance.now();
 }
 function trimSilence(buf, thr = 0.02) {
   const n = buf.length, sr = buf.sampleRate, ch = [...Array(buf.numberOfChannels)].map((_, c) => buf.getChannelData(c));
@@ -1790,13 +2017,13 @@ function buildGridUI() {
   }
 }
 const BASS_S = [0, 7, 4, 2];
-const BASS_LBL = { 0: '', 7: '↑', 4: '5', 2: '3' };
+const BASS_LBL = { 0: '', 7: '↑', 4: '5', 2: '3', 1: '2' };
 function cellView(track, v) {
   switch (track) {
     case 'snare': return v === 1 ? ['on', ''] : v === 2 ? ['ghost', '·'] : ['', ''];
     case 'hat': return v ? ['on', v > 1 ? '×' + v : ''] : ['', ''];
     case 'bass': return v ? ['on' + (v.slide ? ' slide' : ''), BASS_LBL[v.s] ?? ''] : ['', ''];
-    case 'lead': return v != null ? ['on', v === 0 ? 'R' : String(v + 1)] : ['', ''];
+    case 'lead': return v != null ? ['on', v === 0 ? 'R' : v < 0 ? '↓7' : String(v + 1)] : ['', ''];
     case 'chop': return v ? ['on' + (v.rev ? ' rev' : ''), VOWELS[v.v].toUpperCase()] : ['', ''];
     case 'flip': return v ? ['on' + (v.rev ? ' rev' : ''), String(v.k + 1)] : ['', ''];
     default: return v ? ['on', ''] : ['', ''];
@@ -1901,6 +2128,7 @@ function renderPads() {
   $$('.pad').forEach((w, i) => {
     const p = PADS[i];
     $('.nm', w).textContent = p.name; $('.src', w).textContent = p.buf ? p.src : '';
+    $('.k', w).textContent = FLIP ? PAD_KEYS_FLIP[i] : String(i + 1);
     $('.mini.x', w).hidden = !p.buf;
   });
 }
@@ -1923,7 +2151,7 @@ function applySongUI() {
   $('#swing').value = Math.round(song.swing * 100); $('#swing-out').textContent = Math.round(song.swing * 100) + '%';
   $('#fills').setAttribute('aria-pressed', String(song.fills));
   $('#seed').textContent = '#' + song.seed.toString(16).toUpperCase().padStart(8, '0').slice(0, 6);
-  $('#styleTag').textContent = STYLES[song.style].label + ' · ' + (STYLES[song.style].lead === 'bell' ? 'halftime' : 'jerk bounce');
+  $('#styleTag').textContent = STYLES[song.style].label + ' · ' + STYLES[song.style].tag;
   renderLabels(); renderChords(); renderGrid();
 }
 function newSong() {
@@ -1998,15 +2226,131 @@ function initUI() {
   $('#vLoad').addEventListener('click', () => $('#vFile').click());
   $('#vFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadVocalFile(f); e.target.value = ''; });
   $('#vPlay').addEventListener('click', toggleVocalFile);
+  const bump = d => { song.bpm = clamp(song.bpm + d, 60, 200); $('#bpm').value = song.bpm; applySongAudio(); scheduleFlipRender(); };
+  for (const [id, d] of [['#bpmDn', -1], ['#bpmUp', 1]]) {
+    let rep = 0;
+    const stop = () => { clearInterval(rep); rep = 0; };
+    $(id).addEventListener('pointerdown', e => { e.preventDefault(); bump(d); stop(); rep = setInterval(() => bump(d), 110); });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) $(id).addEventListener(ev, stop);
+  }
+  $$('.view').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+  // Keys. On the Flip 2 every one of these arrives from a controller button (flip2/rap-machine.yaml).
+  const inField = e => e.target.closest && e.target.closest(FLIP ? 'input[type=number], textarea' : 'input, select, textarea');
   document.addEventListener('keydown', e => {
-    if (e.target.closest('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
-    if (e.code === 'Space') { if (e.target.closest('button')) return; e.preventDefault(); togglePlay(); }
-    else if (e.key === 'g' || e.key === 'G') newSong();
-    else if (e.key === 'r' || e.key === 'R') toggleRec();
-    else if (e.key === 'm' || e.key === 'M') toggleMic();
-    else if (/^[1-8]$/.test(e.key)) triggerPad(+e.key - 1);
+    if (inField(e) || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+    const k = e.key.toLowerCase();
+    if (e.code === 'Space') { if (!FLIP && e.target.closest('button')) return; e.preventDefault(); togglePlay(); }
+    else if (k === 'g') newSong();
+    else if (k === 'n') nextStyle();
+    else if (k === 'r') toggleRec();
+    else if (k === 'm') toggleMic();
+    else if (/^[1-8]$/.test(k)) triggerPad(+k - 1);
+    else if (k === 'i') setScene('intro');
+    else if (k === 'v') setScene('verse');
+    else if (k === 'h') setScene('hook');
+    else if (k === 'b') setScene('break');
+    else if (k === 'f') hfDown(e);
+    else if (k === '[') stepView(-1);
+    else if (k === ']') stepView(1);
+    else return;
+    if (FLIP) e.preventDefault();
   });
+  document.addEventListener('keyup', e => { if (e.key === 'f' || e.key === 'F') hfUp(); });
+  if (FLIP) initFlip();
   setStyle('glitter');
+}
+function nextStyle() { const ks = Object.keys(STYLES); setStyle(ks[(ks.indexOf(styleKey) + 1) % ks.length]); }
+
+/* ---------- views (one panel at a time on the Flip 2) ---------- */
+const VIEWS = ['pattern', 'booth', 'pads', 'mix'];
+let view = 'pattern';
+function setView(v) {
+  view = v;
+  $$('.panel[data-view]').forEach(e => { e.hidden = FLIP && e.dataset.view !== v; });
+  $$('.view').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+}
+function stepView(d) { if (FLIP) setView(VIEWS[(VIEWS.indexOf(view) + d + VIEWS.length) % VIEWS.length]); }
+
+/* =====================================================================
+   RETROID POCKET FLIP 2
+   The page is served by flip2/server.py on the device. Layout: html.flip (zoom 2 on the 1920×1080
+   panel). Stick LED rings: POST /led at up to ~30 Hz, only when the frame changes. Left ring is the
+   beat clock in the artist's colour (acc-2 through the fill bar), breathing when stopped. Right ring
+   is a VU of the tuned vocal, red heartbeat while a take records, white flash on a pad hit.
+   ===================================================================== */
+const led = { on: false, last: '', busy: false, pend: null, t: 0, flash: -1e9, fail: 0 };
+let lastStep = null;
+function initFlip() {
+  const setH = () => { const h = innerHeight > 800 ? innerHeight / ZOOM : innerHeight; document.documentElement.style.setProperty('--ph', h + 'px'); };
+  setH(); addEventListener('resize', setH);
+  setView('pattern');
+  $('.panel[data-view="pads"] h2 small').textContent = 'A B X Y · d-pad';
+  // a touched button must not keep focus, or Start (Space) would press it again instead of play/stop
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) b.blur(); });
+  if (REMOTE) { remoteLoop(); setInterval(postStatus, 1000); addEventListener('error', e => { lastErr = String(e.message || e); }); }
+}
+const ledMul = (c, k) => c.map(x => Math.round(clamp(x * k, 0, 255)));
+function ledTick() {
+  if (led.fail >= 5) return;
+  const t = performance.now(); if (t - led.t < 30) return; led.t = t;
+  const P = STYLES[styleKey], A = P.led.a, B = P.led.b, L = [], R = [];
+  if (playing && lastStep && ctx) {
+    const pos = lastStep.s + (ctx.currentTime - lastStep.t) / (15 / song.bpm);
+    const beat = Math.floor(pos / 4) % 4, bar = Math.floor(pos / 16) % 4, frac = (pos / 4) % 1;
+    const col = bar === 3 && song.fills ? B : A;
+    for (let i = 0; i < 4; i++) L.push(i === beat ? ledMul(col, 1 - 0.8 * frac) : ledMul(A, 0.08));
+  } else {
+    const br = 0.06 + 0.1 * (0.5 + 0.5 * Math.sin(t / 1000 * 2 * Math.PI * 0.35));
+    for (let i = 0; i < 4; i++) L.push(ledMul(A, br));
+  }
+  let lvl = 0;
+  if ((micStream || vFileSrc) && lastInfo) lvl = clamp((20 * Math.log10(lastInfo.rms + 1e-6) + 50) / 45, 0, 1);
+  let base = recorder ? ledMul([255, 40, 40], 0.18 + 0.18 * (0.5 + 0.5 * Math.sin(t / 1000 * 2 * Math.PI))) : [0, 0, 0];
+  if (t - led.flash < 110) base = [255, 255, 255];
+  for (let i = 0; i < 4; i++) { const k = clamp(lvl * 4 - i, 0, 1); R.push(base.map((v, c) => Math.max(v, Math.round(B[c] * k)))); }
+  ledSend(JSON.stringify({ l: L, r: R }));
+}
+function ledSend(s) {
+  if (s === led.last) return;
+  if (led.busy) { led.pend = s; return; }
+  led.last = s; led.busy = true;
+  fetch('/led', { method: 'POST', body: s, headers: { 'Content-Type': 'application/json' } })
+    .then(r => { led.on = r.ok; led.fail = r.ok ? 0 : led.fail + 1; }, () => { led.on = false; led.fail++; })
+    .then(() => { led.busy = false; if (led.pend) { const p = led.pend; led.pend = null; ledSend(p); } });
+}
+let fsLast = '';
+function flipStatus() {
+  const k = scene + (micStream ? 1 : 0) + (recorder ? 1 : 0) + (led.on ? 1 : 0);
+  if (k === fsLast) return; fsLast = k;
+  $('#fs-scene').textContent = scene.toUpperCase();
+  $('#fs-mic').classList.toggle('on', !!micStream); $('#fs-rec').classList.toggle('on', !!recorder); $('#fs-led').classList.toggle('on', led.on);
+}
+/* ---------- remote control (?remote): commands queued on the server, e.g. server.py --key m ---------- */
+let lastErr = '';
+async function remoteLoop() {
+  for (;;) {
+    try {
+      const cmds = await (await fetch('/cmd?wait=20')).json();
+      for (const c of cmds) {
+        if (c.key) {
+          const init = { key: c.key, code: c.key === ' ' ? 'Space' : /^[a-z]$/i.test(c.key) ? 'Key' + c.key.toUpperCase() : /^\d$/.test(c.key) ? 'Digit' + c.key : '', bubbles: true };
+          document.body.dispatchEvent(new KeyboardEvent('keydown', init)); document.body.dispatchEvent(new KeyboardEvent('keyup', init));
+        }
+        if (c.click) { const e = $(c.click); if (e) e.click(); else lastErr = 'no element ' + c.click; }
+        if (c.reload) location.reload();
+        if (c.set) { const e = $(c.set[0]); if (e) { e.value = c.set[1]; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); } }
+      }
+    } catch (e) { await new Promise(r => setTimeout(r, 1000)); }
+  }
+}
+function postStatus() {
+  const pc = $('#pitch'), r = pc.getBoundingClientRect();
+  const st = { t: Date.now(), playing, style: styleKey, bpm: song.bpm, seed: song.seed, scene, view, mic: !!micStream, ctx: ctx ? ctx.state : null,
+    sr: ctx ? ctx.sampleRate : null, outLat: ctx ? ctx.outputLatency : null, tuner: tuner ? tuner.mode : null, tunerLat: tunerLatency,
+    rms: lastInfo ? lastInfo.rms : null, voiced: lastInfo ? !!lastInfo.v : null, rec: !!recorder, takes: takeN, led: led.on, ledFail: led.fail,
+    inner: [innerWidth, innerHeight], dpr: devicePixelRatio, pitchRect: [Math.round(r.width), Math.round(r.height)], pitchClient: [pc.clientWidth, pc.clientHeight],
+    msg: $('#boothMsg').textContent, err: lastErr, ua: navigator.userAgent };
+  fetch('/status', { method: 'POST', body: JSON.stringify(st), headers: { 'Content-Type': 'application/json' } }).catch(() => {});
 }
 async function togglePlay() {
   await ensureAudio();
@@ -2021,10 +2365,12 @@ function colors() {
   return accCache;
 }
 function fit(cv) {
+  // under CSS zoom the client rect is in device-ish pixels while clientWidth is layout pixels; the
+  // ratio is the zoom, which text and line widths need as well
   const r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
   if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-  return dpr;
+  return dpr * (cv.clientWidth && r.width ? r.width / cv.clientWidth : 1);
 }
 let fbuf = null;
 function drawScope() {
@@ -2052,8 +2398,8 @@ function drawPitch() {
   g.clearRect(0, 0, W, H);
   let lastV = null; for (let i = trace.length - 1; i >= Math.max(0, trace.length - 40); i--) if (trace[i].v) { lastV = trace[i]; break; }
   if (lastV) pitchCenter += (lastV.o - pitchCenter) * 0.06;
-  const span = 16, px = H / span, yOf = m => H / 2 - (m - pitchCenter) * px, mask = tunerKeysCache;
-  g.font = `${10 * dpr}px "JetBrains Mono", monospace`; g.textBaseline = 'middle';
+  const span = FLIP ? 13 : 16, px = H / span, yOf = m => H / 2 - (m - pitchCenter) * px, mask = tunerKeysCache;
+  g.font = `${(FLIP ? 8 : 10) * dpr}px "JetBrains Mono", monospace`; g.textBaseline = 'middle';
   for (let m = Math.floor(pitchCenter - span / 2) - 1; m <= Math.ceil(pitchCenter + span / 2) + 1; m++) {
     const pc = pcOf(m); if (!mask[pc]) continue;
     const y = yOf(m);
@@ -2076,7 +2422,7 @@ function drawPitch() {
   line('o', C.acc, 2.4 * dpr, 10 * dpr);
   if (!micStream && !vFileSrc && trace.every(d => !d.v)) {
     g.fillStyle = C.dim; g.textAlign = 'center'; g.font = `${12 * dpr}px "Chakra Petch", sans-serif`;
-    g.fillText('Enable the mic and sing — grey is your voice, the bright line is what comes out.', W / 2, H / 2);
+    g.fillText(FLIP ? 'Press the left stick (M) and sing — grey is you, bright is the tune.' : 'Enable the mic and sing — grey is your voice, the bright line is what comes out.', W / 2, H / 2);
     g.textAlign = 'left';
   }
 }
@@ -2097,10 +2443,11 @@ function frame() {
   requestAnimationFrame(frame);
   if (ctx) {
     let cur = null; while (visQ.length && visQ[0].t <= ctx.currentTime) cur = visQ.shift();
-    if (cur && playing) setPlayhead(cur.s);
+    if (cur && playing) { setPlayhead(cur.s); lastStep = cur; }
     if (recorder) $('#recTime').textContent = '● ' + fmtTime((performance.now() - recStart) / 1000);
   }
   drawScope(); drawPitch(); drawReadout();
+  if (FLIP) { ledTick(); flipStatus(); }
 }
 
 initUI();

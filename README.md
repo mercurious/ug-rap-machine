@@ -14,18 +14,20 @@ Then open <http://localhost:8766/underground-rap-machine.html> in Chrome, Edge o
 
 ## Sound templates
 
-| | GLITTER | JERK |
-|---|---|---|
-| Lane | pluggnb / rage — Nettspend | NY jerk / plugg — xaviersobased |
-| Tempo | 142–162 BPM, halftime snare on 3 | 150–180 BPM, staggered off-grid snares |
-| Drums | triplet and ×4 hat rolls, rimshots | fidgety kicks, snaps, open-hat bounce |
-| Harmony | major / lydian / minor / dorian, maj7 and 9th chords | minor / phrygian / harmonic minor, often one-chord loops |
-| Sounds | FM bells, glassy keys, glide 808 | plugg square lead, detuned pad wash, distorted 808 |
-| Samples | pitched vocal chops, light tape | mangled chops, crushed and wobbling choir loop |
-| Mix | light sidechain, bright reverb | heavy sidechain pump, more tape and dirt |
-| Vocal preset | hard tune, +1.5 st formant, wide double | hard tune, dirtier, tighter space |
+Four artist lanes. Each one is a template in `STYLES`: tempo and swing ranges, scales and chord loops, a drum kit, the lead and pad voices, how the chops and the flip loop are pitched and degraded, a mix, and a vocal preset.
 
-**Generate** rolls a new beat in the selected template: tempo, key, scale, 4-bar chord progression and every row of the pattern.
+| | GLITTER | JERK | CHE | PRTTIFUN |
+|---|---|---|---|---|
+| Lane | pluggnb / rage — Nettspend | NY jerk / plugg — xaviersobased | dark jerk / rage — Che | bubblegum plugg, sped-up — Prttifun |
+| Tempo | 142–162 BPM, halftime snare on 3 | 150–180 BPM, staggered off-grid snares | 158–176 BPM, straight, stumbling double kicks | 150–170 BPM, bouncy jerk grid with swing |
+| Drums | triplet and ×4 hat rolls, rimshots | fidgety kicks, snaps, open-hat bounce | dense hats, big clap-snare, ghosts dragged into the bar line | crisp snare, triplet rolls, snaps |
+| Harmony | major / lydian / minor / dorian, maj7 and 9th chords | minor / phrygian / harmonic minor, often one-chord loops | phrygian / minor / harmonic minor, one or two chords with a ♭II lean | major / lydian pop loops, 9ths most of the time |
+| Sounds | FM bells, glassy keys, glide 808 | plugg square lead, detuned pad wash, distorted 808 | rage stab (four saws screeching down into the note), sub-octave drone, 808 into the clipper | breathy flute lead, bright glass keys, clean 808 |
+| Samples | pitched vocal chops, light tape | mangled chops, crushed and wobbling choir loop | chops pitched down and reversed, low choir loop crushed to 6 bits | chipmunk chops an octave up, high clean choir loop |
+| Mix | light sidechain, bright reverb | heavy sidechain pump, more tape and dirt | hardest pump, most tape | least tape, most reverb and delay |
+| Vocal preset | hard tune, +1.5 st formant, wide double | hard tune, dirtier, tighter space | hard tune, heavy dirt, formant down | hard tune, +3 st pitch and formant, widest double |
+
+**Generate** rolls a new beat in the selected template: tempo, key, scale, 4-bar chord progression and every row of the pattern. **N** cycles the lanes.
 
 ## Controls
 
@@ -65,9 +67,45 @@ No mic? **Tune a vocal file…** runs an audio file through the same chain, star
 |---|---|
 | Space | Play / stop |
 | G | Generate a new beat |
+| N | Next artist lane |
 | 1–8 | Trigger pads |
+| I V H B | Scenes: intro, verse, hook, break |
+| F (hold) | Low-pass filter sweep |
 | R | Start / stop recording |
 | M | Mic on / off |
+| [ ] | Previous / next view (Flip 2 layout only) |
+
+## Retroid Pocket Flip 2
+
+The same file runs as a handheld instrument on a Flip 2 with [ROCKNIX](https://rocknix.org) and the house Firefox build. `flip2/` holds the device side:
+
+| File | Role |
+|---|---|
+| `server.py` | Serves the page on `http://127.0.0.1:8766` (a secure context, so the mic works) and writes the stick LED rings from `POST /led`. Also `--test` to see the ring order, `--grant-mic` to allow the mic for that origin in the Firefox profile, and `--key`, `--click`, `--set`, `--status` to drive a page opened with `?remote` from ssh. |
+| `launch.sh` | Starts the server, opens the page in kiosk mode through `/storage/apps/firefox-rocknix/launch.sh`, then loads the controller profile. Cleans up and restores the rings on exit. |
+| `rap-machine.yaml` | InputPlumber profile: which button sends which key. |
+| `Rap Machine.sh` | The ROCKNIX port entry (shows up under Ports in EmulationStation). |
+| `install.sh [host]` | Copies all of it over ssh (default host `flip2-12g`), grants the mic, adds the port to `gamelist.xml`. |
+
+Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5" 1920×1080 panel and shows one view at a time: **Pattern**, **Booth**, **Pads**, **Mix**. The touchscreen works everywhere; the controller does the performing:
+
+| Control | Action |
+|---|---|
+| A B X Y | Pads 1–4 |
+| D-pad ↑ → ↓ ← | Pads 5–8 |
+| Start | Play / stop |
+| Select | Generate a new beat |
+| L1 / R1 | Previous / next view |
+| Left stick | Scene: up Intro, right Verse, down Hook, left Break |
+| L3 (press the left stick) | Mic on / off |
+| R3 (press the right stick) | Record a take |
+| L2 (hold) | Low-pass filter sweep |
+| Right stick + R2 | Pointer and tap |
+| Guide (Home) | Leave |
+
+**LED rings.** The ring around the left stick is the beat clock: one segment per beat in the lane's colour, the fill bar in the second colour, a slow breath when stopped. The ring around the right stick is a VU of your tuned voice, a red heartbeat while a take records, and a white flash on every pad hit. Frames go to the server at up to 30 per second only when something changed; the kernel's `multi_intensity` order is read from sysfs, not assumed.
+
+Plug in headphones: through the speakers the internal mic feeds back into the tuner. Takes download into Firefox's download folder on the device.
 
 ## How it works
 
@@ -80,4 +118,4 @@ No mic? **Tune a vocal file…** runs an audio file through the same chain, star
 
 **Beat engine** is a look-ahead scheduler (Web Worker timer, 120 ms horizon) driving synthesized voices: sine 808s with drive and glide, noise/tone drums, FM bells, detuned saw pads and a filtered square lead. Vocal chops are formant-synthesized vowels rendered offline and played as samples; the flip loop is a rendered choir that is then bit-crushed, sample-rate reduced, wobbled and given vinyl crackle.
 
-Everything lives in `underground-rap-machine.html` — no build step or dependencies. Fonts load from Google Fonts and fall back to system fonts offline.
+Everything lives in `underground-rap-machine.html` — no build step or dependencies. Fonts load from Google Fonts and fall back to system fonts offline. The Flip 2 bridge in `flip2/server.py` is standard-library Python.
