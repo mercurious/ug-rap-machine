@@ -110,7 +110,7 @@ LANES = {
     "che": "CHE: dark jerk / rage, 158-176 BPM, phrygian, one or two chords, 808 into the clipper, rage stabs, sub-octave drone, chops pitched down and reversed. Menacing.",
     "prttifun": "PRTTIFUN: bubblegum plugg, 150-170 BPM, major / lydian pop loops, flute lead, chipmunk chops an octave up, sped-up choir. Sweet, bouncy, bright.",
 }
-PADS = ["riser", "reverse crash", "boom", "tape stop (stops the beat!)", "laser", "sparkle", "vox hit", "808 dive"]
+PADS = ["riser", "reverse crash", "boom", "tape stop (the beat winds down and drops back in on the next bar)", "laser", "sparkle", "vox hit", "808 dive"]
 NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 MODES = ["major", "lydian", "minor", "dorian", "phrygian", "harmonic"]
 ROWS = ["kick", "bass", "snare", "hat", "ohat", "perc", "keys", "lead", "chop", "flip"]
@@ -162,7 +162,7 @@ What you control
 - sections: the arrangement, played in order. scene is a mute group: intro (keys and flip only, filtered),
   verse (no chops, no lead), hook (everything), break (no drums). bars is 4 or 8. pads are one-shots fired
   on a bar of the section (bar 1 = its first bar); pad numbers: """ + ", ".join(f"{i+1} {p}" for i, p in enumerate(PADS)) + """.
-  Use tape stop at most once, at the very end.
+  Use tape stop at most once, as a drop on the last bar before a hook or on the very last bar.
 - lines: the lyrics of the section, sung one after another from its first bar. Each line is 4 to 9 words,
   one breath. Its melody is the notes the auto-tune forces, as scale degrees spread evenly over the line:
   0 is the root, 2 the third, 4 the fifth, 7 the octave, negative goes below the root. Hooks repeat a

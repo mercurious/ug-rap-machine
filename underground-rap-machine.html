@@ -1745,6 +1745,7 @@ function startTransport() {
 }
 function stopTransport() {
   playing = false; timer.stop(); visQ.length = 0;
+  if (ai.on) aiStop();   // stopping the beat stops the MC too, otherwise the lines would go on over silence
   if (bassV.osc) { const t = ctx.currentTime; bassV.g.gain.cancelScheduledValues(t); bassV.g.gain.setTargetAtTime(0, t, 0.02); bassV.osc.stop(t + 0.2); bassV.osc = null; }
   setPlayhead(-1);
   $('#play').setAttribute('aria-pressed', 'false'); $('#play').textContent = '▶'; $('#play').setAttribute('aria-label', 'Play');
@@ -1910,11 +1911,19 @@ function tapeStop(t) {
   d.cancelScheduledValues(t); d.setValueCurveAtTime(curve, t, T0);
   g.cancelScheduledValues(t); g.setValueAtTime(1, t); g.setValueAtTime(1, t + T0 - 0.12); g.linearRampToValueAtTime(0, t + T0);
   setTimeout(() => {
-    if (playing) stopTransport();
     const n2 = ctx.currentTime;
     d.cancelScheduledValues(0); d.setValueAtTime(0.004, n2);
-    g.cancelScheduledValues(0); g.setValueAtTime(0, n2); g.linearRampToValueAtTime(1, n2 + 0.3);
-  }, (T0 + 0.15) * 1000);
+    g.cancelScheduledValues(0); g.setValueAtTime(0, n2);
+    if (ai.on && playing) {
+      // the MC uses it as a drop: the beat keeps counting under the silence and comes back on the next bar
+      const back = Math.max(n2 + 0.03, nextBarTime());
+      g.setValueAtTime(0, back - 0.03); g.linearRampToValueAtTime(1, back);
+    } else {
+      // a player uses it to end the song
+      if (playing) stopTransport();
+      g.linearRampToValueAtTime(1, n2 + 0.3);
+    }
+  }, Math.max(0, t - ctx.currentTime + T0 + 0.15) * 1000);
 }
 async function triggerPad(i) {
   await ensureAudio();
@@ -2548,10 +2557,11 @@ function renderPlan(plan) {
   for (const [k, v] of rows) kv.append(el('span', '', { text: k }), el('b', '', { text: v }));
 }
 function degMask(d) { const m = new Array(12).fill(0); m[pcOf(sn(song, d))] = 1; return m; }
-function aiStartPlan(plan, gen) {
-  // lay the plan on the bar grid from the next bar and schedule it from frame()
+function aiStartPlan(plan, gen, at) {
+  // lay the plan on the bar grid from the next bar (or from `at`, the bar the previous plan ended on) and schedule it from frame()
   if (!playing) startTransport();
-  const barDur = 240 / song.bpm, t0 = nextBarTime(), evts = [];
+  const t0 = at && at > ctx.currentTime - 0.1 ? at : nextBarTime();
+  const barDur = 240 / song.bpm, evts = [];
   let bar = 0;
   plan.sections.forEach((s, si) => {
     const start = bar;
@@ -2587,14 +2597,14 @@ function aiTick() {
       if (tuner && voc.scale !== 'off') mel.forEach((d, j) => later(() => tuner.post({ keys: degMask(d) }), wait + j * step * 1000));
       later(() => { const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { $$('.line.now').forEach(x => { x.classList.remove('now'); x.classList.add('sung'); }); d.classList.add('now'); } }, wait);
       later(() => { pushTuner(); const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { d.classList.remove('now'); d.classList.add('sung'); } }, wait + e.dur * 1000 + 40);
-    } else if (e.kind === 'end') later(() => aiEnd(), wait);
+    } else if (e.kind === 'end') later(() => aiEnd(e.t), wait);
   }
 }
-function aiEnd() {
+function aiEnd(at) {
   if (!ai.on) return;
   const gen = ai.gen;
-  if (ai.next) { const p = ai.next; ai.next = null; aiApply(p); aiStartPlan(p, gen); if (ai.loop) aiPrefetch(gen); }
-  else { aiSay(`“${ai.plan.title}” again` + (ai.loop ? ' · waiting for the next one' : '')); aiStartPlan(ai.plan, gen); }
+  if (ai.next) { const p = ai.next; ai.next = null; aiApply(p); aiStartPlan(p, gen, at); if (ai.loop) aiPrefetch(gen); }
+  else { aiSay(`“${ai.plan.title}” again` + (ai.loop ? ' · waiting for the next one' : '')); aiStartPlan(ai.plan, gen, at); }
 }
 async function aiPrefetch(gen) {
   if (ai.nextBusy) return; ai.nextBusy = true;

@@ -57,7 +57,7 @@ Four artist lanes. Each one is a template in `STYLES`: tempo and swing ranges, s
 
 No mic? **Tune a vocal file…** runs an audio file through the same chain, starting on the next bar.
 
-**Pads.** Eight built-in sounds (riser, reverse crash, boom, tape stop, laser, sparkle, vox hit, 808 dive) on keys 1–8. Drop an audio file on a pad to replace it, or press ● to record 2 seconds of your tuned vocal as an ad-lib.
+**Pads.** Eight built-in sounds (riser, reverse crash, boom, tape stop, laser, sparkle, vox hit, 808 dive) on keys 1–8. Tape stop winds the song down and stops it; when Gemma plays it, the beat drops back in on the next bar instead. Drop an audio file on a pad to replace it, or press ● to record 2 seconds of your tuned vocal as an ad-lib.
 
 **Master and takes.** Volume, tape/lo-fi, sidechain pump and FX return. **Record take** captures the full mix — beat, pads and vocal — and each take downloads in the browser's recording format (WebM, Ogg or M4A) or as WAV.
 
