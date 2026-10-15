@@ -107,7 +107,7 @@ The same file runs as a handheld instrument on a Flip 2 with [ROCKNIX](https://r
 | `launch.sh` | Starts the server, opens the page in kiosk mode through `/storage/apps/firefox-rocknix/launch.sh`, then loads the controller profile. Cleans up and restores the rings on exit. |
 | `rap-machine.yaml` | InputPlumber profile: which button sends which key. |
 | `Rap Machine.sh`, `Rap Machine + Gemma.sh` | The ROCKNIX port entries (under Ports in EmulationStation); the second one also starts Gemma and Pocket TTS for the MC mode. |
-| `install.sh [host]` | Copies all of it over ssh (default host `flip2-12g`), grants the mic, adds the port to `gamelist.xml`. |
+| `install.sh [host]` | Copies all of it over ssh (default host `flip2-12g`), grants the mic, adds the ports to `gamelist.xml`. EmulationStation shows them after a game list refresh (Start → Game Settings → Update Gamelists) or a restart. |
 
 Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5" 1920×1080 panel and shows one view at a time: **Pattern**, **Booth**, **Pads**, **Mix**, **MC**. The touchscreen works everywhere; the controller does the performing:
 
