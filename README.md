@@ -19,7 +19,7 @@ Four artist lanes. Each one is a template in `STYLES`: tempo and swing ranges, s
 | | GLITTER | JERK | CHE | PRTTIFUN |
 |---|---|---|---|---|
 | Lane | pluggnb / rage — Nettspend | NY jerk / plugg — xaviersobased | dark jerk / rage — Che | bubblegum plugg, sped-up — Prttifun |
-| Tempo | 142–162 BPM, halftime snare on 3 | 150–180 BPM, staggered off-grid snares | 158–176 BPM, straight, stumbling double kicks | 150–170 BPM, bouncy jerk grid with swing |
+| Tempo | 112–126 BPM, halftime snare on 3 | 116–128 BPM, staggered off-grid snares | 118–130 BPM, straight, stumbling double kicks | 114–126 BPM, bouncy jerk grid with swing |
 | Drums | triplet and ×4 hat rolls, rimshots | fidgety kicks, snaps, open-hat bounce | dense hats, big clap-snare, ghosts dragged into the bar line | crisp snare, triplet rolls, snaps |
 | Harmony | major / lydian / minor / dorian, maj7 and 9th chords | minor / phrygian / harmonic minor, often one-chord loops | phrygian / minor / harmonic minor, one or two chords with a ♭II lean | major / lydian pop loops, 9ths most of the time |
 | Sounds | FM bells, glassy keys, glide 808 | plugg square lead, detuned pad wash, distorted 808 | rage stab (four saws screeching down into the note), sub-octave drone, 808 into the clipper | breathy flute lead, bright glass keys, clean 808 |
@@ -27,7 +27,7 @@ Four artist lanes. Each one is a template in `STYLES`: tempo and swing ranges, s
 | Mix | light sidechain, bright reverb | heavy sidechain pump, more tape and dirt | hardest pump, most tape | least tape, most reverb and delay |
 | Vocal preset | hard tune, +1.5 st formant, wide double | hard tune, dirtier, tighter space | hard tune, heavy dirt, formant down | hard tune, +3 st pitch and formant, widest double |
 
-**Generate** rolls a new beat in the selected template: key, scale, 4-bar chord progression and every row of the pattern, at the tempo you have set. Switching lanes picks a tempo from the lane's range. **N** cycles the lanes.
+**Generate** rolls a new beat in the selected template: key, scale, 4-bar chord progression and every row of the pattern, at the tempo you have set. Switching lanes picks a tempo from the lane's range; every lane sits around 120 BPM, which is where the machine sounds best. The BPM box goes from 60 to 200 if you want it faster. **N** cycles the lanes.
 
 ## Controls
 
@@ -83,7 +83,9 @@ The **MC** panel hands the instrument to a local language model. Through the bri
 - a booth preset (pitch, formant, double, dirt, delay, reverb) and which Pocket TTS voice sings;
 - sections in order, each a scene, 4 or 8 bars, pad hits on given bars, and the lines, every line with a **melody** as scale degrees.
 
-**Pocket TTS** then speaks each line, the page trims it, lays the sections on the bar grid, fires the scenes and pads at their bars, and plays every line into the vocal chain. While a line plays, the auto-tune is forced to one note at a time from its melody, spread evenly over the line, so spoken TTS comes out sung in the song's key. Your mic can stay on; it shares the booth. The tempo is yours: the BPM at the moment you press **Let Gemma play** (or move to by hand while it plays) is the session's cue, and every plan stays within about 5% of it whatever lane Gemma picks, so a session started at 120 stays downtempo. **Keep going** asks for the next song while this one plays and switches to it when the plan ends; until it arrives, the plan loops. Themes are a hint, "surprise me" leaves it to the model. Takes record the whole thing like any other performance.
+**Pocket TTS** then speaks each line, the page trims it, lays the sections on the bar grid, fires the scenes and pads at their bars, and plays every line into the vocal chain. While a line plays, the auto-tune is forced to one note at a time from its melody, so spoken TTS comes out sung in the song's key. Your mic can stay on; it shares the booth. The tempo is yours: the BPM at the moment you press **Let Gemma play** (or move to by hand while it plays) is the session's cue, and every plan stays within about 5% of it whatever lane Gemma picks, so a session started at 90 stays slow.
+
+**Syncopation** sets how Gemma sits on the beat. At 0 every line starts on the one and its melody is spread evenly over the line, the way a machine would. Turned up, lines come in on a pickup (an 8th, a 16th or a dotted 8th before the bar) or lazily after it, some lie a touch behind the beat, and the note changes are pulled onto the 16th grid with a taste for the off-beats, swung like the hats. The slider is read when each plan is laid out, so it takes effect on the next song (or the next loop of this one), and Gemma is told the setting so the lines are written to fit: even lines when it is low, pickups and mixed lengths when it is high. Default 45. **Keep going** asks for the next song while this one plays and switches to it when the plan ends; until it arrives, the plan loops. Themes are a hint, "surprise me" leaves it to the model. Takes record the whole thing like any other performance.
 
 Timing on the Flip 2 with E4B: about 90–150 s to write a plan of ten lines, then a few seconds per line of speech. The model and the voice run on three big cores at low priority (the model as a batch task) and Firefox's audio threads get a real-time slice on the launcher's watch, so a plan being written under a playing song does not make the beat flutter. The status line shows what it is doing. `URM_MODEL=e2b` picks the small Gemma, about twice as fast.
 

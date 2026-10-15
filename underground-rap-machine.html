@@ -156,6 +156,7 @@ input[type=range]:hover::-moz-range-thumb{background:var(--acc)}
 .mc-row{display:grid}
 .themes{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .themes .btn{font-size:11px;padding:7px 10px;text-transform:none;letter-spacing:.04em}
+.mc .booth-row .sync{width:150px;gap:3px}
 .mc-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr);gap:14px;align-items:start}
 .lyrics{display:grid;gap:10px}
 .sec{display:grid;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
@@ -178,6 +179,7 @@ input[type=range]:hover::-moz-range-thumb{background:var(--acc)}
 .mc-health b{color:var(--dim);font-weight:500}
 .btn.ai[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--ink)}
 .flip .mc-body{grid-template-columns:minmax(0,1fr) 240px;gap:8px}
+.flip .mc .booth-row .sync{width:120px}
 .flip .lyrics{max-height:300px;overflow:auto;gap:6px}
 .flip .sec{padding:5px 8px;gap:2px}
 .flip .line{font-size:12px;padding:1px 5px}
@@ -369,7 +371,7 @@ html.flip{background:var(--ground)}
     <div class="tg">
       <label class="lbl" for="bpm">BPM</label>
       <button class="btn fo" id="bpmDn" aria-label="Slower">−</button>
-      <input class="num" id="bpm" type="number" min="60" max="200" step="1" value="150">
+      <input class="num" id="bpm" type="number" min="60" max="200" step="1" value="120">
       <button class="btn fo" id="bpmUp" aria-label="Faster">+</button>
     </div>
     <div class="tg">
@@ -516,6 +518,7 @@ html.flip{background:var(--ground)}
         <h2>MC <small>Gemma · llamatalk · Pocket TTS</small></h2>
         <div class="booth-row">
           <select id="aiVoice" aria-label="Singing voice"><option value="">voice: default</option></select>
+          <div class="ctl sync" title="Where Gemma's lines land: 0 is square on the downbeat, more lets lines come in on a pickup or behind the beat and pulls the melody onto the off-beats"><div class="tl"><label class="lbl" for="aiSync">Syncopation</label><output id="aiSync-out"></output></div><input type="range" id="aiSync" min="0" max="100" step="1"></div>
           <button class="btn" id="aiLoop" aria-pressed="true" title="Ask Gemma for the next song while this one plays">Keep going</button>
           <button class="btn primary ai" id="aiGo" aria-pressed="false">Let Gemma play</button>
         </div>
@@ -816,7 +819,7 @@ const ROMAN = ['I','II','III','IV','V','VI','VII'];
 
 const STYLES = {
   glitter: {
-    label: 'GLITTER', tag: 'halftime', family: 'half', bpm: [142, 162], swing: [0.05, 0.14],
+    label: 'GLITTER', tag: 'halftime', family: 'half', bpm: [112, 126], swing: [0.05, 0.14],
     modes: [['major', 3], ['lydian', 2], ['minor', 2], ['dorian', 1]],
     progs: {
       major:    [[3,2,5,0],[0,5,3,4],[3,4,2,5],[0,2,3,3],[5,3,0,4],[3,3,0,0],[0,4,5,3],[1,4,0,0]],
@@ -840,7 +843,7 @@ const STYLES = {
     led: { a: [255, 92, 200], b: [168, 236, 255] },
   },
   jerk: {
-    label: 'JERK', tag: 'jerk bounce', family: 'jerk', bpm: [150, 180], swing: [0, 0.05],
+    label: 'JERK', tag: 'jerk bounce', family: 'jerk', bpm: [116, 128], swing: [0, 0.05],
     modes: [['minor', 3], ['phrygian', 2], ['harmonic', 2], ['dorian', 1]],
     progs: {
       minor:    [[0,0,5,5],[0,5,0,6],[0,0,0,0],[0,6,5,6],[5,5,0,0],[0,3,0,3]],
@@ -866,7 +869,7 @@ const STYLES = {
   // Che: dark, fast jerk with rage stabs; one or two chords, a ♭II lean, the 808 driven into the clipper,
   // ghost snares dragged into the bar line, chops pitched down and reversed, a sub-octave drone for keys.
   che: {
-    label: 'CHE', tag: 'dark rage', family: 'jerk', bpm: [158, 176], swing: [0, 0.04],
+    label: 'CHE', tag: 'dark rage', family: 'jerk', bpm: [118, 130], swing: [0, 0.04],
     modes: [['phrygian', 3], ['minor', 3], ['harmonic', 2]],
     progs: {
       phrygian: [[0,1,0,1],[0,0,1,1],[0,0,0,0],[0,1,6,0],[0,5,1,0]],
@@ -891,7 +894,7 @@ const STYLES = {
   // Prttifun: bubblegum plugg. Bright major / lydian pop loops with 9ths, bouncy jerk drums under a dense
   // bell-style melody played by a breathy flute, chipmunk chops an octave up, a clean sped-up choir flip.
   prttifun: {
-    label: 'PRTTIFUN', tag: 'sped up', family: 'jerk', bpm: [150, 170], swing: [0.04, 0.12],
+    label: 'PRTTIFUN', tag: 'sped up', family: 'jerk', bpm: [114, 126], swing: [0.04, 0.12],
     modes: [['major', 4], ['lydian', 2], ['dorian', 1], ['minor', 1]],
     progs: {
       major:    [[0,4,5,3],[3,4,0,0],[5,3,0,4],[1,4,0,0],[0,5,1,4],[3,3,4,4],[0,2,3,4]],
@@ -2324,6 +2327,7 @@ function initUI() {
   bindRange('v-verb', voc, 'verb', pct, applyVocal);
   bindRange('v-input', voc, 'input', pct, applyVocal);
   bindRange('v-level', voc, 'level', pct, applyVocal);
+  bindRange('aiSync', ai, 'sync', pct);
   bindRange('m-vol', mst, 'vol', pct, applyMaster);
   bindRange('m-lofi', mst, 'lofi', pct, applyMaster);
   bindRange('m-duck', mst, 'duck', pct, applyMaster);
@@ -2514,7 +2518,7 @@ async function togglePlay() {
    ===================================================================== */
 const THEMES = ['surprise me', 'flexing', 'heartbreak', 'late night drive', 'paranoid', 'summer', 'money phone', 'texting an ex'];
 const ai = { on: false, loop: true, theme: THEMES[0], voices: [], health: null, gen: 0, plan: null, next: null, nextBusy: false, anchor: 0,
-             evts: [], srcs: [], timers: [], titles: [], lineEls: [], secEls: [], status: '' };
+             sync: 45, tok: 0, lineOn: 0, evts: [], srcs: [], timers: [], titles: [], lineEls: [], secEls: [], status: '' };
 const MC = /[?&]mc\b/.test(location.search);
 function initAI() {
   const box = $('#aiThemes');
@@ -2563,7 +2567,7 @@ async function aiRequestPlan(gen) {
   // the model writes for a minute or two, too long to hold one request open: the bridge starts a job,
   // the page follows it on /ai/progress and fetches the plan when it is done. Returns null if stopped.
   const voices = ai.voices.length ? ai.voices : ['alba'];
-  const body = { state: aiSummary(), tempo: aiTempo(), theme: ai.theme, avoid: ai.titles, voices };
+  const body = { state: aiSummary(), tempo: aiTempo(), theme: ai.theme, avoid: ai.titles, voices, sync: ai.sync };
   const r = await fetch('/ai/plan', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
   const d = await r.json();
   if (!d.job) throw new Error(d.error || 'the bridge did not start a plan');
@@ -2646,20 +2650,44 @@ function renderPlan(plan) {
   for (const [k, v] of rows) kv.append(el('span', '', { text: k }), el('b', '', { text: v }));
 }
 function degMask(d) { const m = new Array(12).fill(0); m[pcOf(sn(song, d))] = 1; return m; }
+// Syncopation: where a line lands and where its notes change. At 0 a line starts on the one and its melody
+// is spread evenly over it, the way a machine would. Higher lets a line come in on a pickup (an 8th, a 16th
+// or a dotted 8th before the bar) or lazily after it, lays it a touch behind the beat, and pulls the note
+// changes onto the 16th grid with a taste for the off-beats, swung like the hats. `minOff` is the earliest
+// start the previous line's tail (or the clock) allows, in seconds relative to the bar.
+function aiPhrase(dur, n, amt, R, minOff) {
+  const stepDur = 15 / song.bpm, sw = song.swing * stepDur;
+  let st = amt ? pickW([[0, 1 - amt * 0.75], [-2, amt * 0.9], [-1, amt * 0.5], [-3, amt * 0.4], [2, amt * 0.6], [1, amt * 0.35], [3, amt * 0.25]], R) : 0;
+  const lay = amt * stepDur * 0.3 * (R() * 1.3 - 0.3);
+  if (st * stepDur + lay < minOff) st = 0;
+  const off = st * stepDur + (st % 2 ? sw : 0) + lay;
+  const q = Math.min(1, amt * 1.25), times = [0];
+  for (let j = 1; j < n; j++) {
+    const nom = j * dur / n, x = (off + nom) / stepDur, lo = Math.floor(x);
+    let g = x - lo < 0.5 ? lo : lo + 1;
+    if (chance(amt * 0.5, R)) g = lo % 2 ? lo : lo + 1;
+    const t = nom + (g * stepDur + (g % 2 ? sw : 0) - off - nom) * q;
+    times.push(clamp(t, times[j - 1] + 0.04, Math.max(times[j - 1] + 0.04, dur - 0.04)));
+  }
+  return { off, times };
+}
 function aiStartPlan(plan, gen, at) {
   // lay the plan on the bar grid from the next bar (or from `at`, the bar the previous plan ended on) and schedule it from frame()
   if (!playing) startTransport();
   const t0 = at && at > ctx.currentTime - 0.1 ? at : nextBarTime();
-  const barDur = 240 / song.bpm, evts = [];
-  let bar = 0;
+  const barDur = 240 / song.bpm, evts = [], amt = ai.sync / 100, R = rng(randSeed());
+  let bar = 0, lastEnd = ctx.currentTime + 0.1;
   plan.sections.forEach((s, si) => {
     const start = bar;
     evts.push({ t: t0 + start * barDur, kind: 'scene', scene: s.scene, si });
     let cursor = start;
     (s.lines || []).forEach((l, li) => {
       if (!l.buf) return;
-      const need = Math.max(1, Math.ceil((l.buf.duration + 0.12) / barDur));
-      evts.push({ t: t0 + cursor * barDur, kind: 'line', line: l, si, li, dur: l.buf.duration });
+      const mel = (l.melody || []).slice(0, 8), barAt = t0 + cursor * barDur;
+      const ph = aiPhrase(l.buf.duration, Math.max(1, mel.length), amt, R, lastEnd + 0.05 - barAt);
+      const need = Math.max(1, Math.ceil((Math.max(0, ph.off) + l.buf.duration + 0.12) / barDur));
+      evts.push({ t: barAt + ph.off, kind: 'line', line: l, si, li, dur: l.buf.duration, mel, times: ph.times });
+      lastEnd = barAt + ph.off + l.buf.duration;
       cursor += need;
     });
     const len = Math.max(s.bars === 8 ? 8 : 4, cursor - start);
@@ -2682,10 +2710,13 @@ function aiTick() {
     else if (e.kind === 'pad') firePad(e.i, e.t);
     else if (e.kind === 'line') {
       const src = ctx.createBufferSource(); src.buffer = e.line.buf; src.connect(N.vin); src.start(e.t); ai.srcs.push(src);
-      const mel = (e.line.melody || []).slice(0, 8), n = mel.length, step = e.dur / Math.max(1, n);
-      if (tuner && voc.scale !== 'off') mel.forEach((d, j) => later(() => tuner.post({ keys: degMask(d) }), wait + j * step * 1000));
-      later(() => { const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { $$('.line.now').forEach(x => { x.classList.remove('now'); x.classList.add('sung'); }); d.classList.add('now'); } }, wait);
-      later(() => { pushTuner(); const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { d.classList.remove('now'); d.classList.add('sung'); } }, wait + e.dur * 1000 + 40);
+      // a line with a pickup starts under the previous line's tail: the tuner follows whichever line began last
+      const tok = ++ai.tok, forced = tuner && voc.scale !== 'off', note = d => forced && tuner.post({ keys: degMask(d) });
+      later(() => { ai.lineOn = tok; if (e.mel.length) note(e.mel[0]);
+                    const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { $$('.line.now').forEach(x => { x.classList.remove('now'); x.classList.add('sung'); }); d.classList.add('now'); } }, wait);
+      e.mel.forEach((d, j) => j && later(() => { if (ai.lineOn === tok) note(d); }, Math.max(0, (e.t + e.times[j] - ctx.currentTime) * 1000)));
+      later(() => { if (ai.lineOn === tok) { ai.lineOn = 0; pushTuner(); }
+                    const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { d.classList.remove('now'); d.classList.add('sung'); } }, wait + e.dur * 1000 + 40);
     } else if (e.kind === 'end') later(() => aiEnd(e.t), wait);
   }
 }
@@ -2720,7 +2751,7 @@ async function aiStart() {
   } catch (e) { aiSay('Gemma could not play: ' + e.message, true); aiStop(); }
 }
 function aiStop() {
-  ai.on = false; ai.gen++; ai.evts = []; ai.next = null;
+  ai.on = false; ai.gen++; ai.evts = []; ai.next = null; ai.lineOn = 0;
   ai.timers.forEach(clearTimeout); ai.timers = [];
   ai.srcs.forEach(s => { try { s.stop(); } catch (e) { /* already done */ } }); ai.srcs = [];
   if (ctx) pushTuner();

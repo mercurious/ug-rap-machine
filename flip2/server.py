@@ -6,12 +6,12 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
 
   POST /led     {"l": [[r,g,b] ×4], "r": [[r,g,b] ×4]}  segment colours 0–255, clockwise from the top
   POST /status  any JSON: the page's heartbeat (sent when opened with ?remote); GET /status returns it
-  POST /cmd     {"key": "m"} | {"click": "#gen"} | {"set": ["#bpm", 160]}: queued for the page,
+  POST /cmd     {"key": "m"} | {"click": "#gen"} | {"set": ["#bpm", 120]}: queued for the page,
                 which long-polls GET /cmd?wait=20 when opened with ?remote. Lets ssh drive the page.
 
   server.py --port 8766 --dir /storage/apps/rap-machine     serve (the launcher does this)
   server.py --test                                           light each segment in turn, to check ORDER
-  server.py --key m | --click "#gen" | --set "#bpm" 160      send a command to the running server
+  server.py --key m | --click "#gen" | --set "#bpm" 120      send a command to the running server
   server.py --status                                         print the page's last heartbeat
   server.py --grant-mic                                      allow the mic for this origin in the house
                                                              Firefox profile (Firefox must be closed)
@@ -109,10 +109,10 @@ class State:
 # through the auto-tune, forcing one note at a time from the melody.
 # ---------------------------------------------------------------------------------------------
 LANES = {
-    "glitter": "GLITTER: pluggnb / rage, halftime, 142-162 BPM, major or lydian with maj7 and 9th chords, FM bells, glassy keys, glide 808. Pretty, floaty, melodic.",
-    "jerk": "JERK: NY jerk / plugg, 150-180 BPM, minor or phrygian one-chord loops, square plugg lead, detuned pad wash, distorted 808, mangled chops. Fidgety, grimy.",
-    "che": "CHE: dark jerk / rage, 158-176 BPM, phrygian, one or two chords, 808 into the clipper, rage stabs, sub-octave drone, chops pitched down and reversed. Menacing.",
-    "prttifun": "PRTTIFUN: bubblegum plugg, 150-170 BPM, major / lydian pop loops, flute lead, chipmunk chops an octave up, sped-up choir. Sweet, bouncy, bright.",
+    "glitter": "GLITTER: pluggnb / rage, halftime, 112-126 BPM, major or lydian with maj7 and 9th chords, FM bells, glassy keys, glide 808. Pretty, floaty, melodic.",
+    "jerk": "JERK: NY jerk / plugg, 116-128 BPM, minor or phrygian one-chord loops, square plugg lead, detuned pad wash, distorted 808, mangled chops. Fidgety, grimy.",
+    "che": "CHE: dark jerk / rage, 118-130 BPM, phrygian, one or two chords, 808 into the clipper, rage stabs, sub-octave drone, chops pitched down and reversed. Menacing.",
+    "prttifun": "PRTTIFUN: bubblegum plugg, 114-126 BPM, major / lydian pop loops, flute lead, chipmunk chops an octave up, sped-up choir. Sweet, bouncy, bright.",
 }
 PADS = ["riser", "reverse crash", "boom", "tape stop (the beat winds down and drops back in on the next bar)", "laser", "sparkle", "vox hit", "808 dive"]
 NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -265,18 +265,25 @@ class AIBridge:
         theme = (req.get("theme") or "surprise me").strip()[:60]
         tempo = req.get("tempo") or {}
         try:
-            anchor = int(tempo.get("anchor") or st.get("bpm") or 150)
+            anchor = int(tempo.get("anchor") or st.get("bpm") or 120)
         except (TypeError, ValueError):
-            anchor = 150
+            anchor = 120
         margin = max(4, round(anchor * 0.05))
         lo, hi = int(tempo.get("lo") or anchor - margin), int(tempo.get("hi") or anchor + margin)
+        try:
+            sync_pct = max(0, min(100, int(req.get("sync", 45))))
+        except (TypeError, ValueError):
+            sync_pct = 45
         user = (
             f"The beat right now: lane {st.get('lane')}, {st.get('bpm')} BPM, {st.get('key')} {st.get('mode')}, "
             f"chords {' | '.join(st.get('chords') or [])}, swing {st.get('swing')}%, scene {st.get('scene')}. "
             f"Steps on per row: {st.get('density')}.\n"
-            f"Tempo zone: {lo}-{hi} BPM, set by the performer around {anchor}; bpm must stay inside it"
-            f"{' (a downtempo session: let the lane breathe at this speed)' if anchor < 135 else ''}.\n"
-            f"Voices available: {', '.join(voices)}.\n"
+            f"Tempo zone: {lo}-{hi} BPM, set by the performer around {anchor}; bpm must stay inside it.\n"
+            f"Vocal syncopation {sync_pct}%: "
+            + ("every line lands square on the downbeat, so write even lines of the same length.\n" if sync_pct < 20 else
+               "lines come in on pickups and behind the beat; mix short punchy lines with longer ones and start some on a one-word pickup.\n" if sync_pct >= 60 else
+               "some lines come in on a pickup or behind the beat; vary the line lengths a little.\n")
+            + f"Voices available: {', '.join(voices)}.\n"
             f"Theme from the performer: {theme}.\n"
             + (f"Already performed this session: {'; '.join(avoid)}. Do not reuse those titles or lines; change the key, the lane or the mood.\n" if avoid else "")
             + "Answer with the JSON plan."
