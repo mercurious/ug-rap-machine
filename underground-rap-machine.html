@@ -2617,6 +2617,8 @@ function aiApply(plan) {
   const key = NOTES.indexOf(plan.key); if (key >= 0) song.root = key;
   if (SCALES[plan.mode]) song.mode = plan.mode;
   if (plan.swing != null) song.swing = clamp(plan.swing, 0, 30) / 100;
+  // the card shows what was applied, not what Gemma asked for (a bpm outside the zone is clamped to it)
+  plan.bpm = song.bpm; plan.key = NOTES[song.root]; plan.mode = song.mode; plan.swing = Math.round(song.swing * 100);
   if (plan.reroll) { const R = rng(randSeed()); for (const row of plan.reroll) if (GEN[row]) song.pat[row] = GEN[row](song.style, R, P, song.pat); }
   finalizeSong(song); applySongUI(); pushTuner(); applySongAudio(); scheduleFlipRender();
   if (plan.vocal) {
