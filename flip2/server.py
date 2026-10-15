@@ -121,7 +121,7 @@ PLAN_SCHEMA = {
     "properties": {
         "title": {"type": "string", "maxLength": 40},
         "lane": {"enum": list(LANES)},
-        "bpm": {"type": "integer", "minimum": 135, "maximum": 182},
+        "bpm": {"type": "integer", "minimum": 60, "maximum": 200},
         "key": {"enum": NOTES},
         "mode": {"enum": MODES},
         "swing": {"type": "integer", "minimum": 0, "maximum": 25},
@@ -157,7 +157,10 @@ performance plan, nothing else.
 What you control
 - lane: the sound template. """ + " ".join(LANES.values()) + """
   Switching lane generates a fresh beat in that lane; keeping it keeps the current beat.
-- bpm, key, mode, swing (percent): the groove. Stay inside the lane's tempo range.
+- bpm, key, mode, swing (percent): the groove. The tempo is the performer's call: the message gives a
+  tempo zone around the BPM they set, stay inside it. The BPM ranges in the lane descriptions are only
+  where each lane usually sits; any lane can be played slower or faster, so pick the lane for the mood
+  and keep the performer's tempo.
 - reroll: rows of the 16-step pattern to re-roll (kick bass snare hat ohat perc keys lead chop flip).
 - vocal: the auto-tune preset for the voice. pitch and formant in semitones. double/dirt/delay/verb 0-100.
 - voice: the name of the Pocket TTS voice that sings, from the list given.
@@ -222,10 +225,19 @@ class AIBridge:
         voices = req.get("voices") or ["alba"]
         avoid = [t for t in (req.get("avoid") or []) if t][-6:]
         theme = (req.get("theme") or "surprise me").strip()[:60]
+        tempo = req.get("tempo") or {}
+        try:
+            anchor = int(tempo.get("anchor") or st.get("bpm") or 150)
+        except (TypeError, ValueError):
+            anchor = 150
+        margin = max(4, round(anchor * 0.05))
+        lo, hi = int(tempo.get("lo") or anchor - margin), int(tempo.get("hi") or anchor + margin)
         user = (
             f"The beat right now: lane {st.get('lane')}, {st.get('bpm')} BPM, {st.get('key')} {st.get('mode')}, "
             f"chords {' | '.join(st.get('chords') or [])}, swing {st.get('swing')}%, scene {st.get('scene')}. "
             f"Steps on per row: {st.get('density')}.\n"
+            f"Tempo zone: {lo}-{hi} BPM, set by the performer around {anchor}; bpm must stay inside it"
+            f"{' (a downtempo session: let the lane breathe at this speed)' if anchor < 135 else ''}.\n"
             f"Voices available: {', '.join(voices)}.\n"
             f"Theme from the performer: {theme}.\n"
             + (f"Already performed this session: {'; '.join(avoid)}. Do not reuse those titles or lines; change the key, the lane or the mood.\n" if avoid else "")

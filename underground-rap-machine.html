@@ -2282,7 +2282,7 @@ function initUI() {
   $('#gen').addEventListener('click', newSong);
   $('#play').addEventListener('click', togglePlay);
   $('#rec').addEventListener('click', toggleRec);
-  $('#bpm').addEventListener('change', () => { song.bpm = clamp(Math.round(+$('#bpm').value || song.bpm), 60, 200); $('#bpm').value = song.bpm; applySongAudio(); scheduleFlipRender(); });
+  $('#bpm').addEventListener('change', () => { song.bpm = clamp(Math.round(+$('#bpm').value || song.bpm), 60, 200); $('#bpm').value = song.bpm; ai.anchor = song.bpm; applySongAudio(); scheduleFlipRender(); });
   $('#key').addEventListener('change', () => { song.root = +$('#key').value; finalizeSong(song); renderChords(); pushTuner(); scheduleFlipRender(); });
   $('#mode').addEventListener('change', () => { song.mode = $('#mode').value; finalizeSong(song); renderChords(); pushTuner(); scheduleFlipRender(); });
   $('#swing').addEventListener('input', () => { song.swing = +$('#swing').value / 100; $('#swing-out').textContent = $('#swing').value + '%'; });
@@ -2328,7 +2328,7 @@ function initUI() {
   $('#vLoad').addEventListener('click', () => $('#vFile').click());
   $('#vFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadVocalFile(f); e.target.value = ''; });
   $('#vPlay').addEventListener('click', toggleVocalFile);
-  const bump = d => { song.bpm = clamp(song.bpm + d, 60, 200); $('#bpm').value = song.bpm; applySongAudio(); scheduleFlipRender(); };
+  const bump = d => { song.bpm = clamp(song.bpm + d, 60, 200); $('#bpm').value = song.bpm; ai.anchor = song.bpm; applySongAudio(); scheduleFlipRender(); };
   for (const [id, d] of [['#bpmDn', -1], ['#bpmUp', 1]]) {
     let rep = 0;
     const stop = () => { clearInterval(rep); rep = 0; };
@@ -2510,7 +2510,7 @@ async function togglePlay() {
    plays and takes over when it ends; until then the plan loops.
    ===================================================================== */
 const THEMES = ['surprise me', 'flexing', 'heartbreak', 'late night drive', 'paranoid', 'summer', 'money phone', 'texting an ex'];
-const ai = { on: false, loop: true, theme: THEMES[0], voices: [], health: null, gen: 0, plan: null, next: null, nextBusy: false,
+const ai = { on: false, loop: true, theme: THEMES[0], voices: [], health: null, gen: 0, plan: null, next: null, nextBusy: false, anchor: 0,
              evts: [], srcs: [], timers: [], titles: [], lineEls: [], secEls: [], status: '' };
 const MC = /[?&]mc\b/.test(location.search);
 function initAI() {
@@ -2550,9 +2550,15 @@ function aiSummary() {
   return { lane: styleKey, bpm: song.bpm, key: NOTES[song.root], mode: song.mode, chords: song.chords.map(c => c.name),
            swing: Math.round(song.swing * 100), scene, fills: song.fills, density };
 }
+// The tempo the performer set when Gemma started (or moved to by hand since) is the session's cue: every
+// plan stays within a few percent of it, whatever the lane's usual range. Downtempo stays downtempo.
+function aiTempo() {
+  const a = ai.anchor || song.bpm, m = Math.max(4, Math.round(a * 0.05));
+  return { anchor: a, lo: Math.max(60, a - m), hi: Math.min(200, a + m) };
+}
 async function aiRequestPlan(gen) {
   const voices = ai.voices.length ? ai.voices : ['alba'];
-  const body = { state: aiSummary(), theme: ai.theme, avoid: ai.titles, voices };
+  const body = { state: aiSummary(), tempo: aiTempo(), theme: ai.theme, avoid: ai.titles, voices };
   const poll = setInterval(async () => {
     if (gen !== ai.gen) return;
     try {
@@ -2590,7 +2596,8 @@ async function aiSynth(plan, gen, onProgress) {
 function aiApply(plan) {
   if (plan.lane && STYLES[plan.lane] && plan.lane !== styleKey) setStyle(plan.lane);
   const P = STYLES[styleKey];
-  if (plan.bpm) { song.bpm = clamp(Math.round(plan.bpm), Math.max(60, P.bpm[0] - 6), Math.min(200, P.bpm[1] + 6)); $('#bpm').value = song.bpm; }
+  const z = aiTempo();
+  song.bpm = clamp(Math.round(plan.bpm || z.anchor), z.lo, z.hi); $('#bpm').value = song.bpm;
   const key = NOTES.indexOf(plan.key); if (key >= 0) song.root = key;
   if (SCALES[plan.mode]) song.mode = plan.mode;
   if (plan.swing != null) song.swing = clamp(plan.swing, 0, 30) / 100;
@@ -2690,7 +2697,7 @@ async function aiStart() {
   const h = await aiHealth();
   if (!h || !h.llm) { aiSay(h && h.llmStatus === 'loading' ? 'Gemma is still loading, try again in a bit' : 'no language model: start the bridge with --llm (see README)', true); return; }
   if (!h.tts) { aiSay('no Pocket TTS: start the bridge with --tts (see README)', true); return; }
-  ai.on = true; const gen = ++ai.gen; ai.next = null;
+  ai.on = true; const gen = ++ai.gen; ai.next = null; ai.anchor = song.bpm;
   $('#aiGo').textContent = 'Stop Gemma'; $('#aiGo').setAttribute('aria-pressed', 'true');
   try {
     const plan = await aiRequestPlan(gen); if (gen !== ai.gen) return;
