@@ -277,17 +277,19 @@ html.flip{background:var(--ground)}
 .flip .under{gap:6px 10px}
 .flip .flipname{max-width:200px;font-size:11px}
 /* booth */
-.flip .panel[data-view="booth"]{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);grid-template-rows:auto auto auto auto auto minmax(0,1fr) auto;gap:6px 12px}
+/* the pitch trace is the only row that gives; the sliders set the height of rows 3-4 and the two
+   control rows sit side by side along the bottom */
+.flip .panel[data-view="booth"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:6px 12px}
 .flip .panel[data-view="booth"]>.ph{grid-column:1/-1;grid-row:1}
-.flip .panel[data-view="booth"]>.warn{grid-column:1/-1;grid-row:2;font-size:11px;margin:0}
-.flip .panel[data-view="booth"]>.msg{grid-column:1/-1;grid-row:3;margin:0}
-.flip .pitch{grid-column:1;grid-row:4;height:170px}
-.flip .readout{grid-column:1;grid-row:5}
+.flip .panel[data-view="booth"]>.warn{grid-column:1;grid-row:2;font-size:11px;margin:0}
+.flip .panel[data-view="booth"]>.msg{grid-column:2;grid-row:2;font-size:11px;margin:0}
+.flip .pitch{grid-column:1;grid-row:3;height:100%;min-height:0;min-width:0}
+.flip .readout{grid-column:1;grid-row:4}
 .flip .big{font-size:30px}
 .flip .sub{font-size:10px}
-.flip .panel[data-view="booth"]>.booth-row{grid-column:1;grid-row:6;align-self:start}
-.flip .panel[data-view="booth"]>.ctls{grid-column:2;grid-row:4/7;align-content:start;gap:4px 12px}
-.flip .panel[data-view="booth"]>.file-line{grid-column:1/-1;grid-row:7;padding-top:6px;gap:6px}
+.flip .panel[data-view="booth"]>.booth-row{grid-column:1;grid-row:5;flex-wrap:nowrap;align-self:center}
+.flip .panel[data-view="booth"]>.ctls{grid-column:2;grid-row:3/5;align-content:start;gap:4px 12px}
+.flip .panel[data-view="booth"]>.file-line{grid-column:2;grid-row:5;align-self:center;justify-content:flex-end;border-top:0;padding-top:0;gap:6px;flex-wrap:nowrap}
 .flip .ctl{gap:2px}
 .flip input[type=range]{height:26px}
 .flip input[type=range]::-webkit-slider-thumb{width:18px;height:22px;margin-top:-9px}
@@ -2355,7 +2357,8 @@ let lastStep = null;
 function initFlip() {
   const setH = () => { const h = innerHeight > 800 ? innerHeight / ZOOM : innerHeight; document.documentElement.style.setProperty('--ph', h + 'px'); };
   setH(); addEventListener('resize', setH);
-  setView('pattern');
+  const want = (location.search.match(/[?&]view=(\w+)/) || [])[1];   // ?view=booth opens on that view
+  setView(VIEWS.includes(want) ? want : 'pattern');
   $('.panel[data-view="pads"] h2 small').textContent = 'A B X Y · d-pad';
   // a touched button must not keep focus, or Start (Space) would press it again instead of play/stop
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) b.blur(); });

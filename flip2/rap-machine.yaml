@@ -52,14 +52,14 @@ mapping:
   - name: Pad 1
     source_event:
       gamepad:
-        button: South
+        button: East
     target_events:
       - keyboard: Key1
 
   - name: Pad 2
     source_event:
       gamepad:
-        button: East
+        button: South
     target_events:
       - keyboard: Key2
 

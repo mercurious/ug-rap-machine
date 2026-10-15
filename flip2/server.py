@@ -28,8 +28,9 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 LED_ROOT = "/sys/class/leds"
 # Which sysfs segment (rgb:l1..4 / rgb:r1..4) sits where on each ring, clockwise from the top.
-# Verify with --test and fix here if the clock runs the wrong way round.
-ORDER = {"l": [1, 2, 3, 4], "r": [1, 2, 3, 4]}
+# The segments are numbered counter-clockwise on the Flip 2, so the clock runs 1, 4, 3, 2.
+# Verify with --test and fix here if it runs the wrong way round.
+ORDER = {"l": [1, 4, 3, 2], "r": [1, 4, 3, 2]}
 PROFILE = "/storage/.mozilla/firefox-rocknix"
 
 

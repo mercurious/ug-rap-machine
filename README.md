@@ -109,7 +109,7 @@ The same file runs as a handheld instrument on a Flip 2 with [ROCKNIX](https://r
 | `Rap Machine.sh`, `Rap Machine + Gemma.sh` | The ROCKNIX port entries (under Ports in EmulationStation); the second one also starts Gemma and Pocket TTS for the MC mode. |
 | `install.sh [host]` | Copies all of it over ssh (default host `flip2-12g`), grants the mic, adds the ports to `gamelist.xml`. EmulationStation shows them after a game list refresh (Start → Game Settings → Update Gamelists) or a restart. |
 
-Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5" 1920×1080 panel and shows one view at a time: **Pattern**, **Booth**, **Pads**, **Mix**, **MC**. The touchscreen works everywhere; the controller does the performing:
+Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5" 1920×1080 panel and shows one view at a time: **Pattern**, **Booth**, **Pads**, **Mix**, **MC** (`&view=booth` opens on a given view). The touchscreen works everywhere; the controller does the performing:
 
 | Control | Action |
 |---|---|
