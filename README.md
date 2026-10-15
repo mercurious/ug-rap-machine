@@ -87,13 +87,15 @@ The **MC** panel hands the instrument to a local language model. Through the bri
 
 Timing on the Flip 2 with E4B: about 90–150 s to write a plan of ten lines, then a few seconds per line of speech. The status line shows what it is doing. `URM_MODEL=e2b` picks the small Gemma, about twice as fast.
 
-To run it, start the bridge with the two servers:
+**On the Flip 2** nothing is typed: choose **Rap Machine + Gemma** under Ports. Its launcher starts Gemma, Pocket TTS and the bridge, opens the page, and stops them all when you leave with Guide (or L1+Select+Start). It uses the llamatalk kit and models that [Retro Voice Chat](https://github.com/mercurious/retro-voice-chat) installs; if they are missing, the MC panel says so and the rest of the machine works as usual. While the model loads the panel shows "Gemma loading"; after that, **Let Gemma play**.
+
+**Anywhere else** (a laptop with its own llama-server and `tts-server`), start the bridge yourself and open the page through it:
 
 ```bash
 python3 flip2/server.py --dir . --llm http://127.0.0.1:8096 --tts http://127.0.0.1:8097
 ```
 
-and open <http://127.0.0.1:8766/underground-rap-machine.html?mc>. On the Flip 2, **Rap Machine + Gemma** in Ports starts everything (it uses the llamatalk kit and models that [Retro Voice Chat](https://github.com/mercurious/retro-voice-chat) installs). On a desktop, point `--llm` at any llama-server with a Gemma (or another instruction model) and `--tts` at a `tts-server` from the same kit; the page talks to the bridge only.
+then <http://127.0.0.1:8766/underground-rap-machine.html?mc>. Point `--llm` at any llama-server with a Gemma (or another instruction model) and `--tts` at a `tts-server` from the same kit; the page talks to the bridge only.
 
 ## Retroid Pocket Flip 2
 
