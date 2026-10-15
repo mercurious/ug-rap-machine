@@ -17,9 +17,11 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
                                                              Firefox profile (Firefox must be closed)
   server.py --llm http://127.0.0.1:8096 --tts http://127.0.0.1:8097
                                                              also bridge Gemma (llama-server) and Pocket TTS
-                                                             (tts-server) for the MC mode: POST /ai/plan asks the
-                                                             model for a performance (JSON), POST /ai/tts sings a
-                                                             line, GET /ai/health and /ai/progress for the page;
+                                                             (tts-server) for the MC mode: POST /ai/plan starts the
+                                                             model writing a performance (JSON) and returns a job
+                                                             number, GET /ai/progress follows it, GET /ai/plan?job=N
+                                                             fetches the result; POST /ai/tts sings a line; GET
+                                                             /ai/health reports the servers;
   GET /sys                                                   battery and model activity for the views-row gauges
 
 The rings are restored to what they showed before when the server exits.
@@ -186,6 +188,42 @@ class AIBridge:
         self.progress = {"phase": "idle"}
         self.tts_state = {"busy": 0, "x": None}   # how many lines are being sung, last audio-seconds per wall-second
         self.lock = threading.Lock()
+        self.job, self.job_thread, self.result = 0, None, None   # plans run in a thread; the page polls
+
+    def start_plan(self, req):
+        """Begin writing a plan in the background and return its job number at once. A plan takes a minute
+        or two, too long to hold one HTTP request open: the page polls /ai/progress and then fetches the
+        result from /ai/plan?job=N. A job already running is handed back instead of starting a second."""
+        if not self.llm:
+            return {"error": "no LLM configured (server.py --llm URL)"}
+        with self.lock:
+            if self.job_thread and self.job_thread.is_alive():
+                return {"job": self.job, "running": True}
+            self.job += 1
+            job = self.job
+            self.progress = {"phase": "prompt", "tokens": 0, "t0": time.time(), "job": job}
+            self.result = None
+            self.job_thread = threading.Thread(target=self._run_plan, args=(job, req), daemon=True)
+            self.job_thread.start()
+        return {"job": job}
+
+    def _run_plan(self, job, req):
+        try:
+            res = self.plan(req, job)
+        except Exception as e:  # noqa: BLE001
+            res = {"error": str(e)}
+            with self.lock:
+                self.progress = {"phase": "error", "error": str(e), "job": job}
+        with self.lock:
+            self.result = (job, res)
+            if "plan" in res:
+                self.progress = {"phase": "done", "tokens": res["tokens"], "secs": res["secs"], "job": job}
+
+    def fetch_plan(self, job):
+        with self.lock:
+            if self.result and self.result[0] == job:
+                return self.result[1]
+            return {"error": "no such plan" if job != self.job else "still writing"}
 
     def _get(self, url, timeout=3):
         with urllib.request.urlopen(url, timeout=timeout) as r:
@@ -217,7 +255,7 @@ class AIBridge:
                 pass
         return out
 
-    def plan(self, req):
+    def plan(self, req, job=0):
         """One streamed chat completion, constrained to PLAN_SCHEMA. req: {state, theme, avoid, voices}."""
         if not self.llm:
             return {"error": "no LLM configured (server.py --llm URL)"}
@@ -251,7 +289,7 @@ class AIBridge:
         }
         t0 = time.time()
         with self.lock:
-            self.progress = {"phase": "prompt", "tokens": 0, "t0": t0}
+            self.progress = {"phase": "prompt", "tokens": 0, "t0": t0, "job": job}
         text, tokens = "", 0
         try:
             rq = urllib.request.Request(self.llm + "/v1/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"})
@@ -273,28 +311,26 @@ class AIBridge:
                             text += piece
                             tokens += 1
                             with self.lock:
-                                self.progress = {"phase": "writing", "tokens": tokens, "t0": t0, "secs": time.time() - t0}
+                                self.progress = {"phase": "writing", "tokens": tokens, "t0": t0, "secs": time.time() - t0, "job": job}
         except urllib.error.HTTPError as e:
             msg = e.read()[:300].decode("utf-8", "replace")
             with self.lock:
-                self.progress = {"phase": "error", "error": f"llm http {e.code}: {msg}"}
+                self.progress = {"phase": "error", "error": f"llm http {e.code}: {msg}", "job": job}
             return {"error": f"llm http {e.code}: {msg}"}
         except Exception as e:  # noqa: BLE001
             with self.lock:
-                self.progress = {"phase": "error", "error": str(e)}
+                self.progress = {"phase": "error", "error": str(e), "job": job}
             return {"error": str(e)}
         try:
             a, b = text.index("{"), text.rindex("}") + 1
             plan = json.loads(text[a:b])
         except (ValueError, json.JSONDecodeError) as e:
             with self.lock:
-                self.progress = {"phase": "error", "error": "bad JSON from the model"}
+                self.progress = {"phase": "error", "error": "bad JSON from the model", "job": job}
             return {"error": f"bad JSON from the model: {e}", "raw": text[:2000]}
         secs = time.time() - t0
-        with self.lock:
-            self.progress = {"phase": "done", "tokens": tokens, "secs": secs}
         print(f"plan: {plan.get('title')!r} lane={plan.get('lane')} {tokens} tokens in {secs:.0f}s", flush=True)
-        return {"plan": plan, "tokens": tokens, "secs": secs}
+        return {"plan": plan, "tokens": tokens, "secs": secs}   # _run_plan stores it, then marks the job done
 
     def speak(self, text, voice):
         if not self.tts:
@@ -383,6 +419,13 @@ def make_handler(state, directory):
             if path == "/ai/progress":
                 with state.ai.lock:
                     return self._json(200, state.ai.progress)
+            if path == "/ai/plan":   # ?job=N: the finished plan of that job
+                try:
+                    job = int(self.path.split("job=")[1].split("&")[0])
+                except (IndexError, ValueError):
+                    return self._json(400, {"error": "job=N needed"})
+                res = state.ai.fetch_plan(job)
+                return self._json(200 if "plan" in res else 404, res)
             if path == "/sys":   # the battery gauge and the Gemma speedo in the handheld's views row
                 with state.ai.lock:
                     prog, tts = dict(state.ai.progress), dict(state.ai.tts_state)
@@ -429,8 +472,8 @@ def make_handler(state, directory):
                     state.cv.notify_all()
                 return self._json(200, {"queued": len(state.cmds)})
             if path == "/ai/plan":
-                res = state.ai.plan(data)
-                return self._json(200 if "plan" in res else 502, res)
+                res = state.ai.start_plan(data)
+                return self._json(200 if "job" in res else 502, res)
             if path == "/ai/tts":
                 try:
                     wav = state.ai.speak(str(data.get("text", ""))[:200], data.get("voice"))

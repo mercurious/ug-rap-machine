@@ -2557,23 +2557,32 @@ function aiTempo() {
   return { anchor: a, lo: Math.max(60, a - m), hi: Math.min(200, a + m) };
 }
 async function aiRequestPlan(gen) {
+  // the model writes for a minute or two, too long to hold one request open: the bridge starts a job,
+  // the page follows it on /ai/progress and fetches the plan when it is done. Returns null if stopped.
   const voices = ai.voices.length ? ai.voices : ['alba'];
   const body = { state: aiSummary(), tempo: aiTempo(), theme: ai.theme, avoid: ai.titles, voices };
-  const poll = setInterval(async () => {
-    if (gen !== ai.gen) return;
-    try {
-      const p = await (await fetch('/ai/progress')).json();
-      if (p.phase === 'prompt') aiSay('Gemma is reading the beat…');
-      else if (p.phase === 'writing') aiSay(`Gemma is writing… ${p.tokens} tokens, ${Math.round(p.secs)} s`);
-    } catch (e) { /* keep the last status */ }
-  }, 1000);
-  try {
-    const r = await fetch('/ai/plan', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
-    const d = await r.json();
-    if (!d.plan) throw new Error(d.error || 'no plan');
-    d.plan.secs = d.secs; d.plan.tokens = d.tokens;
-    return d.plan;
-  } finally { clearInterval(poll); }
+  const r = await fetch('/ai/plan', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+  const d = await r.json();
+  if (!d.job) throw new Error(d.error || 'the bridge did not start a plan');
+  let lost = 0;
+  for (;;) {
+    await new Promise(res => setTimeout(res, 1000));
+    if (gen !== ai.gen) return null;
+    let p;
+    try { p = await (await fetch('/ai/progress', { cache: 'no-store' })).json(); lost = p.job === d.job ? 0 : lost + 1; }
+    catch (e) { lost++; }
+    if (lost >= 30) throw new Error('lost the bridge while Gemma was writing');
+    if (!p || p.job !== d.job) continue;
+    if (p.phase === 'prompt') aiSay('Gemma is reading the beat…');
+    else if (p.phase === 'writing') aiSay(`Gemma is writing… ${p.tokens} tokens, ${Math.round(p.secs)} s`);
+    else if (p.phase === 'error') throw new Error(p.error || 'Gemma failed');
+    else if (p.phase === 'done') {
+      const f = await (await fetch(`/ai/plan?job=${d.job}`, { cache: 'no-store' })).json();
+      if (!f.plan) throw new Error(f.error || 'no plan');
+      f.plan.secs = f.secs; f.plan.tokens = f.tokens;
+      return f.plan;
+    }
+  }
 }
 function aiLines(plan) { const out = []; plan.sections.forEach((s, si) => (s.lines || []).forEach((l, li) => out.push({ ...l, si, li }))); return out; }
 async function aiSynth(plan, gen, onProgress) {
@@ -2686,7 +2695,7 @@ function aiEnd(at) {
 async function aiPrefetch(gen) {
   if (ai.nextBusy) return; ai.nextBusy = true;
   try {
-    const plan = await aiRequestPlan(gen); if (gen !== ai.gen) return;
+    const plan = await aiRequestPlan(gen); if (!plan || gen !== ai.gen) return;
     await aiSynth(plan, gen, (i, n) => aiSay(`Pocket TTS is singing the next one… ${i + 1}/${n}`)); if (gen !== ai.gen) return;
     ai.next = plan; aiSay(`next up: “${plan.title}”`);
   } catch (e) { if (gen === ai.gen) aiSay('next plan failed: ' + e.message, true); }
@@ -2700,7 +2709,7 @@ async function aiStart() {
   ai.on = true; const gen = ++ai.gen; ai.next = null; ai.anchor = song.bpm;
   $('#aiGo').textContent = 'Stop Gemma'; $('#aiGo').setAttribute('aria-pressed', 'true');
   try {
-    const plan = await aiRequestPlan(gen); if (gen !== ai.gen) return;
+    const plan = await aiRequestPlan(gen); if (!plan || gen !== ai.gen) return;
     aiApply(plan); renderPlan(plan);
     const ok = await aiSynth(plan, gen, (i, n) => aiSay(`Pocket TTS is singing… ${i + 1}/${n}`)); if (!ok || gen !== ai.gen) return;
     aiStartPlan(plan, gen);
