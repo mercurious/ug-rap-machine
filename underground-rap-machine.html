@@ -206,6 +206,15 @@ input[type=range]:hover::-moz-range-thumb{background:var(--acc)}
 .mini.r.on{background:var(--rec);color:#1a0303;border-color:var(--rec)}
 .mini:hover{color:var(--text);border-color:var(--dim)}
 .master{display:grid;gap:12px}
+/* group buses: a mute button, a level and an overdrive per row */
+.groups{display:grid;gap:8px}
+.grp{display:grid;grid-template-columns:78px minmax(0,1fr) minmax(0,1fr);gap:4px 10px;align-items:center}
+.grp.head{gap:0 10px}
+.grp.head .lbl{padding-left:2px}
+.gs{display:grid;grid-template-columns:minmax(0,1fr) 38px;gap:6px;align-items:center}
+.gs output{text-align:right}
+.btn.gmute{padding:7px 6px;font-size:11px;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn.gmute[aria-pressed="true"]{background:color-mix(in srgb,var(--rec) 28%,var(--panel-2));border-color:var(--rec);color:var(--faint);text-decoration:line-through}
 .takes{display:grid;gap:8px}
 .take{display:grid;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .take .tt{display:flex;justify-content:space-between;gap:8px;font:500 12px var(--f-mono);color:var(--dim);flex-wrap:wrap}
@@ -292,12 +301,17 @@ html.flip{background:var(--ground)}
 .flip .chord{padding:4px 8px;gap:0 8px;grid-template-columns:auto minmax(0,1fr);align-items:baseline}
 .flip .chord .n{font-size:14px;order:-1}
 .flip .chord .d{font-size:9px}
-.flip .grid-wrap{overflow:hidden}
-.flip .grid{min-width:0;gap:2px}
+/* when the rows outrun the panel the strip under the grid pages the hidden ones in (see fitGrid) */
+.flip .grid-wrap{overflow:hidden;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:3px;min-height:0;padding-bottom:0}
+.flip .grid{min-width:0;gap:2px;min-height:0;overflow:hidden;position:relative}
+.gmore{display:none}
+.flip .gmore{display:block;width:100%;height:16px;padding:0;border:1px solid var(--line);border-radius:4px;background:var(--panel-2);font:600 9px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flip .gmore[hidden]{display:none}
+.flip .gmore[aria-pressed="true"]{color:var(--acc-2);border-color:var(--acc-2)}
 .flip .row{grid-template-columns:92px repeat(16,minmax(0,1fr));gap:2px}
 .flip .rh{grid-template-columns:minmax(0,1fr) 18px;padding-right:4px}
 .flip .rh input[type=range]{display:none}
-.flip .trk{font-size:10px;padding:3px 6px}
+.flip .trk{font-size:10px;line-height:1;height:18px;padding:0 6px}
 .flip .dice{width:18px;height:18px;font-size:11px}
 .flip .cell{height:18px;border-radius:3px;font-size:9px}
 .flip .row.nums .cell-n{font-size:9px;padding:0}
@@ -330,11 +344,16 @@ html.flip{background:var(--ground)}
 .flip .pad-hit .nm{font-size:14px}
 .flip .mini{width:30px;height:30px}
 /* mix */
-.flip .master{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);align-content:start}
+.flip .master{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);align-content:start;column-gap:14px}
 .flip .master>.ph:first-child{grid-column:1;grid-row:1}
 .flip .master>.ctls{grid-column:1;grid-row:2;align-self:start;grid-template-columns:minmax(0,1fr)}
 .flip .master>.ph:nth-child(3){grid-column:2;grid-row:1}
-.flip .master>.takes{grid-column:2;grid-row:2;align-self:start}
+.flip .master>.groups{grid-column:2;grid-row:2;align-self:start;gap:4px}
+.flip .master>.ph:nth-child(5){grid-column:3;grid-row:1}
+.flip .master>.takes{grid-column:3;grid-row:2;align-self:start}
+.flip .grp{grid-template-columns:64px minmax(0,1fr) minmax(0,1fr);gap:0 6px}
+.flip .gs{grid-template-columns:minmax(0,1fr) 30px;gap:3px}
+.flip .btn.gmute{padding:6px 4px;font-size:10px}
 .flip .takes{max-height:290px;overflow:auto}
 
 @media (prefers-reduced-motion:reduce){
@@ -414,7 +433,7 @@ html.flip{background:var(--ground)}
         <p class="hint">Click a chord to change it · <kbd>shift</kbd>-click goes back</p>
       </div>
       <div class="chords" id="chords"></div>
-      <div class="grid-wrap"><div class="grid" id="grid" role="grid" aria-label="Step sequencer"></div></div>
+      <div class="grid-wrap"><div class="grid" id="grid" role="grid" aria-label="Step sequencer"></div><button class="gmore" id="gridMore" hidden aria-pressed="false"></button></div>
       <p class="hint">Click steps to toggle. Hats cycle roll ×2/×3/×4 · 808 cycles on → slide · <kbd>shift</kbd>/right-click changes pitch, vowel or slice · ⟳ re-rolls one row · click a row name to mute it.</p>
       <div class="under">
         <div class="scenes" role="group" aria-label="Scenes">
@@ -506,6 +525,10 @@ html.flip{background:var(--ground)}
         <div class="ctl"><div class="tl"><label class="lbl" for="m-lofi">Tape / lo-fi</label><output id="m-lofi-out"></output></div><input type="range" id="m-lofi" min="0" max="100" step="1"></div>
         <div class="ctl"><div class="tl"><label class="lbl" for="m-duck">Sidechain pump</label><output id="m-duck-out"></output></div><input type="range" id="m-duck" min="0" max="90" step="1"></div>
         <div class="ctl"><div class="tl"><label class="lbl" for="m-space">Space (FX return)</label><output id="m-space-out"></output></div><input type="range" id="m-space" min="0" max="150" step="1"></div>
+      </div>
+      <div class="ph"><h2>Groups <small>a name mutes it</small></h2></div>
+      <div class="groups" id="groups">
+        <div class="grp head"><span></span><span class="lbl">Level</span><span class="lbl">Overdrive</span></div>
       </div>
       <div class="ph"><h2>Takes</h2><span class="sub" id="recTime"></span></div>
       <div class="takes" id="takes"><p class="empty">Hit <b>Record take</b> (or <kbd>R</kbd>) — it captures the beat, pads and your tuned vocal.</p></div>
@@ -1133,6 +1156,16 @@ const flip = { gen: null, user: null, timer: 0 };
 const mix = {};            // per-track {vol, mute}
 const voc = { scale: 'beat', range: 80, retune: 0, amount: 100, pitch: 0, formant: 1.5, double: 45, dirt: 8, delay: 30, verb: 42, input: 100, level: 100, monitor: true };
 const mst = { vol: 85, lofi: 25, duck: 15, space: 100 };
+// group buses on the Mix page: every track lands in one of the first three, the vocal chain in the last
+const GROUPS = [
+  { id: 'chords', label: 'CHORDS', tracks: ['keys'] },
+  { id: 'drums',  label: 'DRUMS',  tracks: ['kick', 'bass', 'snare', 'hat', 'ohat', 'perc'] },
+  { id: 'melody', label: 'MELODY', tracks: ['lead', 'chop', 'flip'] },
+  { id: 'voice',  label: 'VOICE',  tracks: [] },
+];
+const grp = {}, G = {};          // id -> {vol, mute, drive}; id -> nodes
+for (const g of GROUPS) grp[g.id] = { vol: 100, mute: false, drive: 0 };
+const groupOf = {}; for (const g of GROUPS) for (const t of g.tracks) groupOf[t] = g.id;
 let scene = 'hook', sceneFilter = 20000;
 let playing = false, nextT = 0, gstep = 0;
 const visQ = [];
@@ -1238,6 +1271,17 @@ function buildMaster() {
   // vinyl crackle bed
   const cr = c.createBufferSource(); cr.buffer = makeCrackle(5); cr.loop = true;
   N.crackle = c.createGain(); N.crackle.gain.value = 0; cr.connect(N.crackle).connect(N.lofiLP); cr.start();
+
+  // group buses: dry and overdriven paths in parallel, then level and mute. Chords and melody keep the
+  // sidechain pump (N.music), drums and the voice go straight to the master chain.
+  for (const g of GROUPS) {
+    const n = { in: c.createGain(), dry: c.createGain(), pre: c.createGain(), sh: c.createWaveShaper(), wet: c.createGain(), vol: c.createGain(), mute: c.createGain() };
+    n.sh.curve = makeCurve(5); n.sh.oversample = '2x'; n.wet.gain.value = 0;
+    n.in.connect(n.dry).connect(n.vol);
+    n.in.connect(n.pre).connect(n.sh).connect(n.wet).connect(n.vol);
+    n.vol.connect(n.mute).connect(g.id === 'drums' ? N.drums : g.id === 'voice' ? N.pre : N.music);
+    G[g.id] = n;
+  }
 }
 
 function buildTracks() {
@@ -1260,7 +1304,7 @@ function buildTracks() {
       t.in.connect(t.hp); last = t.hp;
     }
     t.vol = c.createGain(); t.mute = c.createGain();
-    last.connect(t.vol); t.vol.connect(t.mute); t.mute.connect(N[tr.bus]);
+    last.connect(t.vol); t.vol.connect(t.mute); t.mute.connect(G[groupOf[tr.id]].in);
     t.rs = c.createGain(); t.rs.gain.value = 0; t.mute.connect(t.rs).connect(N.revIn);
     t.ds = c.createGain(); t.ds.gain.value = 0; t.mute.connect(t.ds).connect(N.dlyIn);
     T[tr.id] = t;
@@ -1302,7 +1346,7 @@ function buildVocal() {
   mkTap(0.014, 0.23, 0.0018, -0.85); mkTap(0.022, 0.31, 0.0022, 0.85);
   vOut.connect(N.vBus); N.dbl.connect(N.vBus);
   N.vLevel = c.createGain(); N.vMon = c.createGain();
-  N.vBus.connect(N.vLevel).connect(N.vMon).connect(N.pre);
+  N.vBus.connect(N.vLevel).connect(N.vMon).connect(G.voice.in);
   N.vRev = c.createGain(); N.vDly = c.createGain();
   N.vMon.connect(N.vRev).connect(N.revIn); N.vMon.connect(N.vDly).connect(N.dlyIn);
   N.vPadDest = c.createMediaStreamDestination(); N.vLevel.connect(N.vPadDest);
@@ -1323,6 +1367,17 @@ function applyMix() {
   T.bass.drive.gain.setTargetAtTime(1 + P.kit.drive * 6, now(), 0.05);
   T.keys.lp.frequency.setTargetAtTime(P.padLP, now(), 0.1);
   T.keys.lfoG.gain.setTargetAtTime(P.padLFO, now(), 0.1);
+}
+function applyGroups() {
+  if (!ctx) return;
+  for (const g of GROUPS) {
+    const n = G[g.id], st = grp[g.id], d = st.drive / 100;
+    n.dry.gain.setTargetAtTime(1 - d, now(), 0.03);
+    n.pre.gain.setTargetAtTime(1 + d * 9, now(), 0.03);          // up to 10× into the shaper
+    n.wet.gain.setTargetAtTime(d * 0.6, now(), 0.03);             // the shaped path peaks at full scale, so it comes back down
+    n.vol.gain.setTargetAtTime(Math.pow(st.vol / 100, 1.6), now(), 0.02);
+    n.mute.gain.setTargetAtTime(st.mute ? 0 : 1, now(), 0.01);
+  }
 }
 function applyMaster() {
   if (!ctx) return;
@@ -1801,7 +1856,7 @@ function ensureAudio() {
   audioReady = (async () => {
     noiseBuf = makeNoise(2.5); crashRevBuf = makeRevCrash();
     buildMaster(); buildTracks(); buildVocal();
-    applyMix(); applyMaster(); applyVocal(); applySongAudio(); applyScene(false);
+    applyMix(); applyGroups(); applyMaster(); applyVocal(); applySongAudio(); applyScene(false);
     const v = await renderVowels(); vowels = v.fwd; vowelsRev = v.rev;
     await setupTuner();
     scheduleFlipRender();
@@ -2146,10 +2201,27 @@ function renderGrid() {
     });
   }
 }
+/* Flip 2: the grid gets whatever height the panel has left. When the rows outrun it, the strip under the
+   grid names the rows that are cut off and toggles between the top and the bottom of the grid. */
+let gridTail = false;
+function fitGrid() {
+  const g = $('#grid'), b = $('#gridMore');
+  if (!FLIP || g.offsetParent === null) return;
+  b.hidden = true;                                   // measured without the strip, so showing it can't flip the answer
+  if (g.scrollHeight - g.clientHeight <= 1) { gridTail = false; g.scrollTop = 0; return; }
+  b.hidden = false;
+  g.scrollTop = gridTail ? g.scrollHeight : 0;
+  const top = g.scrollTop, bot = top + g.clientHeight;
+  const cut = TRACKS.filter(tr => { const c = cellEls[tr.id][0]; return c.offsetTop < top - 3 || c.offsetTop + c.offsetHeight > bot + 3; })   // a row shaved by a pixel or two still reads
+    .map(tr => $('#trk-' + tr.id).textContent);
+  b.textContent = `${gridTail ? '↑' : '↓'} show ${cut.join(' · ')}`;
+  b.setAttribute('aria-pressed', String(gridTail));
+}
 function renderMutes() { for (const tr of TRACKS) $('#trk-' + tr.id).setAttribute('aria-pressed', String(!mix[tr.id].mute)); }
 function renderLabels() {
   const L = STYLES[song.style].labels;
   for (const k in L) { $('#trk-' + k).textContent = L[k]; }
+  fitGrid();
 }
 function editCell(track, i, alt) {
   const p = song.pat, v = p[track][i];
@@ -2332,6 +2404,21 @@ function initUI() {
   bindRange('m-lofi', mst, 'lofi', pct, applyMaster);
   bindRange('m-duck', mst, 'duck', pct, applyMaster);
   bindRange('m-space', mst, 'space', pct, applyMaster);
+  for (const g of GROUPS) {
+    const row = el('div', 'grp'), st = grp[g.id];
+    const mb = el('button', 'btn gmute', { id: 'g-' + g.id, 'aria-pressed': 'false', title: `Mute ${g.label.toLowerCase()}`, text: g.label });
+    mb.addEventListener('click', () => { st.mute = !st.mute; mb.setAttribute('aria-pressed', String(st.mute)); applyGroups(); });
+    const slider = (k, max) => {
+      const box = el('div', 'gs');
+      box.append(el('input', '', { type: 'range', id: `g-${g.id}-${k}`, min: '0', max: String(max), step: '1', 'aria-label': `${g.label} ${k === 'vol' ? 'level' : 'overdrive'}` }),
+                 el('output', '', { id: `g-${g.id}-${k}-out` }));
+      return box;
+    };
+    row.append(mb, slider('vol', 150), slider('drive', 100));
+    $('#groups').append(row);
+    bindRange(`g-${g.id}-vol`, st, 'vol', pct, applyGroups);
+    bindRange(`g-${g.id}-drive`, st, 'drive', pct, applyGroups);
+  }
   $('#vLoad').addEventListener('click', () => $('#vFile').click());
   $('#vFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadVocalFile(f); e.target.value = ''; });
   $('#vPlay').addEventListener('click', toggleVocalFile);
@@ -2378,6 +2465,7 @@ function setView(v) {
   view = v;
   $$('.panel[data-view]').forEach(e => { e.hidden = FLIP && e.dataset.view !== v; });
   $$('.view').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+  if (v === 'pattern') fitGrid();
 }
 function stepView(d) { if (FLIP) setView(VIEWS[(VIEWS.indexOf(view) + d + VIEWS.length) % VIEWS.length]); }
 
@@ -2392,7 +2480,8 @@ const led = { on: false, last: '', busy: false, pend: null, t: 0, flash: -1e9, f
 let lastStep = null;
 function initFlip() {
   const setH = () => { const h = innerHeight > 800 ? innerHeight / ZOOM : innerHeight; document.documentElement.style.setProperty('--ph', h + 'px'); };
-  setH(); addEventListener('resize', setH);
+  setH(); addEventListener('resize', () => { setH(); fitGrid(); });
+  $('#gridMore').addEventListener('click', () => { gridTail = !gridTail; fitGrid(); });
   const want = (location.search.match(/[?&]view=(\w+)/) || [])[1];   // ?view=booth opens on that view
   setView(VIEWS.includes(want) ? want : 'pattern');
   $('.panel[data-view="pads"] h2 small').textContent = 'A B X Y · d-pad';
