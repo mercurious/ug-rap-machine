@@ -1823,6 +1823,7 @@ function tick() {
   const ahead = ctx.currentTime + 0.12;
   while (nextT < ahead) {
     playStep(gstep, nextT);
+    if (gstep % 16 === 0) linkPost(gstep, nextT);
     visQ.push({ s: gstep, t: nextT });
     nextT += 15 / song.bpm; gstep++;
   }
@@ -1833,11 +1834,27 @@ function startTransport() {
   $('#play').setAttribute('aria-pressed', 'true'); $('#play').textContent = '■'; $('#play').setAttribute('aria-label', 'Stop');
 }
 function stopTransport() {
-  playing = false; timer.stop(); visQ.length = 0;
+  playing = false; timer.stop(); visQ.length = 0; linkPost(-1, 0);
   if (ai.on) aiStop();   // stopping the beat stops the MC too, otherwise the lines would go on over silence
   if (bassV.osc) { const t = ctx.currentTime; bassV.g.gain.cancelScheduledValues(t); bassV.g.gain.setTargetAtTime(0, t, 0.02); bassV.osc.stop(t + 0.2); bassV.osc = null; }
   setPlayhead(-1);
   $('#play').setAttribute('aria-pressed', 'false'); $('#play').textContent = '▶'; $('#play').setAttribute('aria-label', 'Play');
+}
+/* Jam link: once a bar (as its downbeat is scheduled) the page tells the bridge what it plays and when that
+   downbeat is heard; the bridge beacons it on the LAN so a jam partner (autojam on another handheld) follows the
+   tempo, key, mode and chords exactly instead of guessing them through the air. Only under the bridge (?flip). */
+function linkPost(gs, t) {
+  if (!FLIP) return;
+  let at = null;
+  if (ctx && gs >= 0) {
+    const ts = ctx.getOutputTimestamp ? ctx.getOutputTimestamp() : null;   // includes the output latency
+    at = ts && ts.performanceTime > 0 ? performance.timeOrigin + ts.performanceTime + (t - ts.contextTime) * 1000
+                                      : Date.now() + (t - ctx.currentTime + (ctx.outputLatency || 0)) * 1000;
+  }
+  const s = song, body = { playing: gs >= 0 && playing, bpm: s.bpm, root: s.root, key: NOTES[s.root], mode: s.mode, scale: SCALES[s.mode].iv,
+    lane: styleKey, scene, chords: s.chords.map(c => ({ name: c.name, root: c.rootPc, tones: c.tones })),
+    bar: gs >= 0 ? Math.floor(gs / 16) % 4 : 0, barAt: at === null ? null : Math.round(at) };
+  fetch('/link', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } }).catch(() => {});
 }
 function nextBarTime() {
   if (!playing) return ctx.currentTime + 0.05;

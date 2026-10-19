@@ -23,10 +23,14 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
                                                              fetches the result; POST /ai/tts sings a line; GET
                                                              /ai/health reports the servers;
   GET /sys                                                   battery and model activity for the views-row gauges
+  POST /link    the page, once a bar: tempo, key, mode, the chord loop, which bar and when its downbeat is heard;
+                GET /link returns it. The bridge beacons it on the LAN (UDP broadcast, --link-port, default
+                47800, 0 = off) four times a second, with the next downbeat as "nextBarIn" milliseconds from the
+                send, so a jam partner (autojam) follows exactly without the two clocks having to agree.
 
 The rings are restored to what they showed before when the server exits.
 """
-import argparse, json, os, signal, sqlite3, sys, threading, time, urllib.error, urllib.request
+import argparse, json, math, os, signal, socket, sqlite3, sys, threading, time, urllib.error, urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 LED_ROOT = "/sys/class/leds"
@@ -100,6 +104,34 @@ class State:
         self.cv = threading.Condition(self.lock)
         self.cmds = []
         self.status = {}
+        self.link, self.link_t = None, 0.0   # the page's last bar report and when it came
+
+
+def beacon(state, port):
+    """The jam link: what the page plays, broadcast on the LAN 4x a second while it reports (read-only)."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    host = socket.gethostname()
+    while True:
+        time.sleep(0.25)
+        with state.lock:
+            d, t = state.link, state.link_t
+        if not d or time.time() - t > 6:      # the page went away: say nothing
+            continue
+        msg = {k: v for k, v in d.items() if k != "barAt"}
+        msg.update(app="rap-machine", v=1, host=host)
+        bpm, at = d.get("bpm") or 0, d.get("barAt")
+        if d.get("playing") and at and bpm > 0:
+            now, bar_ms = time.time() * 1000, 240000 / bpm
+            k = math.ceil((now - at) / bar_ms)
+            msg["nextBarIn"] = round(at + k * bar_ms - now, 1)
+            msg["bar"] = (d.get("bar", 0) + k) % max(1, len(d.get("chords") or [0]))
+        else:
+            msg["playing"] = False
+        try:
+            s.sendto(json.dumps(msg).encode(), ("255.255.255.255", port))
+        except OSError:
+            pass                               # no network right now
 
 
 # ---------------------------------------------------------------------------------------------
@@ -396,7 +428,7 @@ def make_handler(state, directory):
             super().__init__(*a, directory=directory, **kw)
 
         def log_message(self, fmt, *args):
-            if self.path.startswith(("/led", "/status", "/cmd", "/sys", "/ai/progress", "/ai/health")):
+            if self.path.startswith(("/led", "/status", "/cmd", "/sys", "/link", "/ai/progress", "/ai/health")):
                 return
             super().log_message(fmt, *args)
 
@@ -421,6 +453,9 @@ def make_handler(state, directory):
             if path == "/status":
                 with state.lock:
                     return self._json(200, state.status)
+            if path == "/link":
+                with state.lock:
+                    return self._json(200, state.link or {})
             if path == "/ai/health":
                 return self._json(200, state.ai.health())
             if path == "/ai/progress":
@@ -473,6 +508,10 @@ def make_handler(state, directory):
                 with state.lock:
                     state.status = data
                 return self._json(200, {})
+            if path == "/link":
+                with state.lock:
+                    state.link, state.link_t = data, time.time()
+                return self._json(200, {})
             if path == "/cmd":
                 with state.cv:
                     state.cmds.append(data)
@@ -497,8 +536,10 @@ def make_handler(state, directory):
     return H
 
 
-def serve(port, directory, ai):
+def serve(port, directory, ai, link_port=47800):
     state = State(ai)
+    if link_port:
+        threading.Thread(target=beacon, args=(state, link_port), daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", port), make_handler(state, directory))
     srv.daemon_threads = True
 
@@ -508,7 +549,7 @@ def serve(port, directory, ai):
     signal.signal(signal.SIGTERM, bye)
     signal.signal(signal.SIGINT, bye)
     print(f"rap machine bridge on http://127.0.0.1:{port}/ serving {directory}; LEDs {'on' if state.rings.ok else 'off'}; "
-          f"LLM {ai.llm or 'none'}; TTS {ai.tts or 'none'}", flush=True)
+          f"LLM {ai.llm or 'none'}; TTS {ai.tts or 'none'}; jam link {f'UDP {link_port}' if link_port else 'off'}", flush=True)
     try:
         srv.serve_forever()
     finally:
@@ -578,6 +619,8 @@ def main():
     ap.add_argument("--llm", default=os.environ.get("URM_LLM"), help="llama-server base URL for the MC mode")
     ap.add_argument("--tts", default=os.environ.get("URM_TTS"), help="tts-server (Pocket TTS) base URL for the MC mode")
     ap.add_argument("--voice", default=os.environ.get("URM_VOICE", "alba"), help="default Pocket TTS voice")
+    ap.add_argument("--link-port", type=int, default=int(os.environ.get("URM_LINK_PORT", "47800")),
+                    help="UDP port of the jam-link beacon on the LAN (0 = off)")
     a = ap.parse_args()
     if a.test:
         return test_order()
@@ -594,7 +637,7 @@ def main():
         return print(send(a.port, "/cmd", cmd))
     if a.status:
         return print(json.dumps(send(a.port, "/status"), indent=1))
-    serve(a.port, a.dir, AIBridge(a.llm, a.tts, a.voice))
+    serve(a.port, a.dir, AIBridge(a.llm, a.tts, a.voice), a.link_port)
 
 
 if __name__ == "__main__":
