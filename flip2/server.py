@@ -27,10 +27,15 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
                 GET /link returns it. The bridge beacons it on the LAN (UDP broadcast, --link-port, default
                 47800, 0 = off) four times a second, with the next downbeat as "nextBarIn" milliseconds from the
                 send, so a jam partner (autojam) follows exactly without the two clocks having to agree.
+  GET /sync, POST /sync {"mode": "off|auto|lead|follow"}
+                Wi-Fi sync with HI5, Jaffedrone and fliptribe: the "HI5S" packet on UDP 5150 (--sync-port), 32
+                bytes ten times a second with tempo, transport and the 16th-step position. The lowest id, or a
+                unit set to LEAD, leads; the others follow. The bridge sends for the page from its bar reports,
+                and GET /sync hands the page the leader it should follow (tempo, playing, position now).
 
 The rings are restored to what they showed before when the server exits.
 """
-import argparse, json, math, os, signal, socket, sqlite3, sys, threading, time, urllib.error, urllib.request
+import argparse, json, math, os, random, signal, socket, sqlite3, struct, sys, threading, time, urllib.error, urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 LED_ROOT = "/sys/class/leds"
@@ -105,6 +110,7 @@ class State:
         self.cmds = []
         self.status = {}
         self.link, self.link_t = None, 0.0   # the page's last bar report and when it came
+        self.sync = None                     # the HI5S peer, when it runs
 
 
 def beacon(state, port):
@@ -118,7 +124,7 @@ def beacon(state, port):
             d, t = state.link, state.link_t
         if not d or time.time() - t > 6:      # the page went away: say nothing
             continue
-        msg = {k: v for k, v in d.items() if k != "barAt"}
+        msg = {k: v for k, v in d.items() if k not in ("barAt", "gbar", "lat")}
         msg.update(app="rap-machine", v=1, host=host)
         bpm, at = d.get("bpm") or 0, d.get("barAt")
         if d.get("playing") and at and bpm > 0:
@@ -132,6 +138,139 @@ def beacon(state, port):
             s.sendto(json.dumps(msg).encode(), ("255.255.255.255", port))
         except OSError:
             pass                               # no network right now
+
+
+def link_pos(d, now_ms):
+    """The page's position in 16th steps at wall time now_ms, from its last bar report, as rendered (the report
+    gives when the downbeat is heard; the output latency is added back so it compares with other engines)."""
+    bpm, at = d.get("bpm") or 0, d.get("barAt")
+    if not (d.get("playing") and at and bpm > 0):
+        return None
+    step_ms = 15000 / bpm
+    return d.get("gbar", 0) * 16 + (now_ms - at + (d.get("lat") or 0)) / step_ms
+
+
+class Sync:
+    """HI5S v1, the Wi-Fi sync of HI5, Jaffedrone and fliptribe (UDP broadcast, port 5150). Every unit sends
+    32 bytes ten times a second: "HI5S", version 1, playing, role (1 AUTO, 2 LEAD, 3 FOLLOW), a reserved byte, a
+    random id (u32), the tempo (f32), the position in 16th steps (f64, unwrapped) and its own clock (u64 µs,
+    ignored), little-endian. LEAD outranks AUTO, ties go to the lowest id, FOLLOW never leads; a peer is gone
+    after 3 s of silence. The bridge speaks for the page: it sends what the page last reported, and the page
+    follows the elected leader through GET /sync (the phase loop runs in the page, which owns the clock)."""
+    PKT = struct.Struct("<4sBBBxIfdQ")
+    ROLES = {"auto": 1, "lead": 2, "follow": 3}
+    RANK = {1: 1, 2: 0}   # anything else (FOLLOW) is 3: never leads
+
+    def __init__(self, state, port, mode):
+        self.state, self.port, self.mode = state, port, mode if mode in ("off", "auto", "lead", "follow") else "auto"
+        self.id = random.SystemRandom().randrange(1, 2 ** 32)
+        self.peers = {}      # id -> {role, playing, bpm, pos, t, ip}
+        self.bcast, self.bcast_t = [], 0.0
+        self.sock = None
+
+    def open(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)   # HI5's own synctest or another app may share the port
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.bind(("0.0.0.0", self.port))
+        s.settimeout(0.02)
+        self.sock = s
+
+    def broadcasts(self):
+        """Every IPv4 interface's broadcast address (ip -4 -o addr), refreshed every 5 s; 255.255.255.255 if none."""
+        if time.time() - self.bcast_t > 5:
+            self.bcast_t, out = time.time(), []
+            try:
+                import subprocess
+                txt = subprocess.run(["ip", "-4", "-o", "addr", "show"], capture_output=True, text=True, timeout=2).stdout
+                for line in txt.splitlines():
+                    w = line.split()
+                    if "brd" in w and " lo " not in f" {w[1]} ":
+                        out.append(w[w.index("brd") + 1])
+            except (OSError, ValueError, IndexError):
+                pass
+            self.bcast = out or ["255.255.255.255"]
+        return self.bcast
+
+    def elect(self, now):
+        """(leader id or None, leading): best rank, then lowest id, over this unit and the peers heard lately."""
+        for k in [k for k, p in self.peers.items() if now - p["t"] > 3]:
+            del self.peers[k]
+        cands = [(self.RANK.get(p["role"], 3), k) for k, p in self.peers.items()]
+        me = self.RANK.get(self.ROLES.get(self.mode), 3)
+        if me < 3:
+            cands.append((me, self.id))
+        cands = [c for c in cands if c[0] < 3]
+        if not cands:
+            return None, False
+        best = min(cands)[1]
+        return (None, True) if best == self.id else (best, False)
+
+    def run(self):
+        last_send = 0.0
+        while True:
+            try:
+                b, addr = self.sock.recvfrom(64)
+                if self.mode != "off" and len(b) >= 32:
+                    magic, ver, playing, role, pid, bpm, pos, _ = self.PKT.unpack_from(b)
+                    if magic == b"HI5S" and ver == 1 and pid != self.id:
+                        now = time.time()
+                        with self.state.lock:
+                            old = self.peers.get(pid)
+                            hist = old["hist"] if old and old["bpm"] == bpm and old["playing"] == bool(playing) else []
+                            hist = [h for h in hist if now - h[0] < 8] + [(now, pos)]
+                            self.peers[pid] = {"role": role, "playing": bool(playing), "bpm": bpm, "pos": pos,
+                                               "t": now, "ip": addr[0], "hist": hist}
+            except socket.timeout:
+                pass
+            except OSError:
+                time.sleep(0.5)
+            now = time.time()
+            if self.mode == "off" or now - last_send < 0.1:
+                continue
+            last_send = now
+            with self.state.lock:
+                d, t = self.state.link, self.state.link_t
+            if not d or now - t > 6:      # no page: say nothing
+                continue
+            pos = link_pos(d, now * 1000)
+            playing = pos is not None
+            if pos is None:
+                pos = 0.0                  # stopped: a follower that starts with us loads the top of the bar
+            pkt = self.PKT.pack(b"HI5S", 1, int(playing), self.ROLES[self.mode], self.id, float(d.get("bpm") or 120),
+                                pos, int(time.monotonic() * 1e6))
+            for a in self.broadcasts():
+                try:
+                    self.sock.sendto(pkt, (a, self.port))
+                except OSError:
+                    pass
+
+    @staticmethod
+    def leader_pos(p, now):
+        """Where the leader is now. Wi-Fi delivers late, never early, and in power save a broadcast waits for the
+        next DTIM beacon, so arrival times scatter by 100 ms and more. Carried on to now at its tempo, the packet
+        that puts the leader furthest ahead came through quickest. A leader runs at its stated tempo (only
+        followers trim their clocks), so over 8 s the quickest packet pins it to a few ms; a new tempo or a
+        start or stop clears the history."""
+        v = p["bpm"] / 15
+        return max(q + (now - t) * v for t, q in p["hist"])
+
+    def view(self):
+        """What the page needs: the mode, who is out there, and the leader to follow with its position now."""
+        now = time.time()
+        with self.state.lock:
+            lid, leading = self.elect(now)
+            peers = [{"id": k, "role": {1: "auto", 2: "lead", 3: "follow"}.get(p["role"], "?"), "bpm": round(p["bpm"], 2),
+                      "playing": p["playing"], "ip": p["ip"]} for k, p in self.peers.items()]
+            out = {"mode": self.mode, "id": self.id, "peers": peers, "leading": leading and bool(peers), "leader": None}
+            p = self.peers.get(lid) if lid else None
+            if p:
+                age = now - p["t"]
+                pos = self.leader_pos(p, now) if p["playing"] else p["pos"]
+                # "at": when pos holds, on the wall clock the page shares with us (it may read the answer a frame later)
+                out["leader"] = {"id": lid, "ip": p["ip"], "bpm": p["bpm"], "playing": p["playing"], "pos": pos,
+                                 "at": now * 1000, "age": round(age * 1000)}
+        return out
 
 
 # ---------------------------------------------------------------------------------------------
@@ -150,6 +289,24 @@ PADS = ["riser", "reverse crash", "boom", "tape stop (the beat winds down and dr
 NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 MODES = ["major", "lydian", "minor", "dorian", "phrygian", "harmonic"]
 ROWS = ["kick", "bass", "snare", "hat", "ohat", "perc", "keys", "lead", "chop", "flip"]
+LINE = {"type": "object", "properties": {
+    "text": {"type": "string", "maxLength": 70},
+    "melody": {"type": "array", "minItems": 2, "maxItems": 12, "items": {"type": "integer", "minimum": -3, "maximum": 9}}},
+    "required": ["text", "melody"]}
+
+
+def section(scenes, min_lines):
+    return {"type": "object", "properties": {
+        "scene": {"enum": scenes},
+        "bars": {"enum": [4, 8]},
+        "sung": {"type": "boolean"},
+        "pads": {"type": "array", "maxItems": 3, "items": {"type": "object", "properties": {
+            "bar": {"type": "integer", "minimum": 1, "maximum": 8},
+            "pad": {"type": "integer", "minimum": 1, "maximum": 8}}, "required": ["bar", "pad"]}},
+        "lines": {"type": "array", "minItems": min_lines, "maxItems": 4, "items": LINE}},
+        "required": ["scene", "bars", "sung", "pads", "lines"]}
+
+
 PLAN_SCHEMA = {
     "type": "object",
     "properties": {
@@ -169,18 +326,9 @@ PLAN_SCHEMA = {
             "verb": {"type": "integer", "minimum": 0, "maximum": 100}},
             "required": ["pitch", "formant", "double", "dirt", "delay", "verb"]},
         "voice": {"type": "string"},
-        "sections": {"type": "array", "minItems": 2, "maxItems": 5, "items": {"type": "object", "properties": {
-            "scene": {"enum": ["intro", "verse", "hook", "break"]},
-            "bars": {"enum": [4, 8]},
-            "pads": {"type": "array", "maxItems": 3, "items": {"type": "object", "properties": {
-                "bar": {"type": "integer", "minimum": 1, "maximum": 8},
-                "pad": {"type": "integer", "minimum": 1, "maximum": 8}}, "required": ["bar", "pad"]}},
-            "lines": {"type": "array", "maxItems": 4, "items": {"type": "object", "properties": {
-                "text": {"type": "string", "maxLength": 70},
-                "melody": {"type": "array", "minItems": 2, "maxItems": 8,
-                           "items": {"type": "integer", "minimum": -3, "maximum": 9}}},
-                "required": ["text", "melody"]}}},
-            "required": ["scene", "bars", "pads", "lines"]}},
+        "sections": {"type": "array", "minItems": 2, "maxItems": 5, "items": {"anyOf": [
+            section(["verse", "hook"], 2),      # a verse or a hook always has lines
+            section(["intro", "break"], 0)]}},  # an intro or a break may be bare
     },
     "required": ["title", "lane", "bpm", "key", "mode", "swing", "reroll", "vocal", "voice", "sections"],
 }
@@ -202,16 +350,28 @@ What you control
   verse (no chops, no lead), hook (everything), break (no drums). bars is 4 or 8. pads are one-shots fired
   on a bar of the section (bar 1 = its first bar); pad numbers: """ + ", ".join(f"{i+1} {p}" for i, p in enumerate(PADS)) + """.
   Use tape stop at most once, as a drop on the last bar before a hook or on the very last bar.
-- lines: the lyrics of the section, sung one after another from its first bar. Each line is 4 to 9 words,
-  one breath. Its melody is the notes the auto-tune forces, as scale degrees spread evenly over the line:
-  0 is the root, 2 the third, 4 the fifth, 7 the octave, negative goes below the root. Hooks repeat a
-  shape; verses move more. Give every line 2 to 8 degrees.
+- sung: true to SING the section, false to RAP it. A sung line is held out on the beat: one vowel per
+  syllable on quarters or eighths over two bars, the last syllable held, at the melody's pitch; a rapped
+  line is spoken in rhythm and the auto-tune bends it onto the melody. Sing a hook to make it catchy, rap
+  the verses; a sung bridge or outro is a nice turn.
+- lines: the lyrics of the section, one after another from its first bar. Each line is 4 to 9 words,
+  one breath. Its melody is the notes the auto-tune forces, as scale degrees: 0 is the root, 2 the third,
+  4 the fifth, 7 the octave, negative goes below the root. For a rapped line give 2 to 8 degrees, spread
+  evenly over it. For a sung line give ONE DEGREE PER SYLLABLE (up to 12), a tune someone could hum: mostly
+  steps, a leap to land the line, end on 0, 2 or 4. Hooks repeat a shape; verses move more.
 
 Write like the lane: GLITTER is dreamy and flexing, JERK is jittery NY slang, CHE is paranoid and dark,
 PRTTIFUN is sugary and playful. Hooks come back word for word. Rhyme inside and at the ends of lines.
 Original words only: never quote existing songs and never name real artists. Slang and swearing are fine;
 no slurs, nothing hateful. An intro or break may have no lines; a hook and a verse always have lines.
 Eight to twelve lines in the whole plan. Write the JSON compact, on one line, no spaces after commas."""
+
+SING = {
+    "auto": "Singing: your call; sing at least one section (a hook is the natural one) and rap at least one.\n",
+    "hooks": "Singing: every hook is sung (sung true); verses, intros and breaks are rapped (sung false).\n",
+    "all": "Singing: sing every section (sung true everywhere), short lines with few syllables, like a ballad.\n",
+    "off": "Singing: none; rap every section (sung false everywhere).\n",
+}
 
 
 class AIBridge:
@@ -302,6 +462,7 @@ class AIBridge:
             anchor = 120
         margin = max(4, round(anchor * 0.05))
         lo, hi = int(tempo.get("lo") or anchor - margin), int(tempo.get("hi") or anchor + margin)
+        sing = req.get("sing") or "auto"
         try:
             sync_pct = max(0, min(100, int(req.get("sync", 45))))
         except (TypeError, ValueError):
@@ -315,6 +476,7 @@ class AIBridge:
             + ("every line lands square on the downbeat, so write even lines of the same length.\n" if sync_pct < 20 else
                "lines come in on pickups and behind the beat; mix short punchy lines with longer ones and start some on a one-word pickup.\n" if sync_pct >= 60 else
                "some lines come in on a pickup or behind the beat; vary the line lengths a little.\n")
+            + SING.get(sing, SING["auto"])
             + f"Voices available: {', '.join(voices)}.\n"
             f"Theme from the performer: {theme}.\n"
             + (f"Already performed this session: {'; '.join(avoid)}. Do not reuse those titles or lines; change the key, the lane or the mood.\n" if avoid else "")
@@ -428,7 +590,7 @@ def make_handler(state, directory):
             super().__init__(*a, directory=directory, **kw)
 
         def log_message(self, fmt, *args):
-            if self.path.startswith(("/led", "/status", "/cmd", "/sys", "/link", "/ai/progress", "/ai/health")):
+            if self.path.startswith(("/led", "/status", "/cmd", "/sys", "/link", "/sync", "/ai/progress", "/ai/health")):
                 return
             super().log_message(fmt, *args)
 
@@ -456,6 +618,8 @@ def make_handler(state, directory):
             if path == "/link":
                 with state.lock:
                     return self._json(200, state.link or {})
+            if path == "/sync":
+                return self._json(200, state.sync.view() if state.sync else {"mode": "off", "peers": [], "leader": None, "unavailable": True})
             if path == "/ai/health":
                 return self._json(200, state.ai.health())
             if path == "/ai/progress":
@@ -512,6 +676,13 @@ def make_handler(state, directory):
                 with state.lock:
                     state.link, state.link_t = data, time.time()
                 return self._json(200, {})
+            if path == "/sync":
+                if not state.sync:
+                    return self._json(503, {"error": "sync is off (--sync-port 0) or its port is taken"})
+                if data.get("mode") not in ("off", "auto", "lead", "follow"):
+                    return self._json(400, {"error": "mode is off, auto, lead or follow"})
+                state.sync.mode = data["mode"]
+                return self._json(200, state.sync.view())
             if path == "/cmd":
                 with state.cv:
                     state.cmds.append(data)
@@ -536,10 +707,18 @@ def make_handler(state, directory):
     return H
 
 
-def serve(port, directory, ai, link_port=47800):
+def serve(port, directory, ai, link_port=47800, sync_port=5150, sync_mode="auto"):
     state = State(ai)
     if link_port:
         threading.Thread(target=beacon, args=(state, link_port), daemon=True).start()
+    if sync_port:
+        sync = Sync(state, sync_port, sync_mode)
+        try:
+            sync.open()
+            state.sync = sync
+            threading.Thread(target=sync.run, daemon=True).start()
+        except OSError as e:
+            print(f"sync: UDP {sync_port} unavailable ({e}); running without it", flush=True)
     srv = ThreadingHTTPServer(("127.0.0.1", port), make_handler(state, directory))
     srv.daemon_threads = True
 
@@ -549,7 +728,8 @@ def serve(port, directory, ai, link_port=47800):
     signal.signal(signal.SIGTERM, bye)
     signal.signal(signal.SIGINT, bye)
     print(f"rap machine bridge on http://127.0.0.1:{port}/ serving {directory}; LEDs {'on' if state.rings.ok else 'off'}; "
-          f"LLM {ai.llm or 'none'}; TTS {ai.tts or 'none'}; jam link {f'UDP {link_port}' if link_port else 'off'}", flush=True)
+          f"LLM {ai.llm or 'none'}; TTS {ai.tts or 'none'}; jam link {f'UDP {link_port}' if link_port else 'off'}; "
+          f"sync {f'UDP {sync_port} {state.sync.mode}' if state.sync else 'off'}", flush=True)
     try:
         srv.serve_forever()
     finally:
@@ -621,6 +801,10 @@ def main():
     ap.add_argument("--voice", default=os.environ.get("URM_VOICE", "alba"), help="default Pocket TTS voice")
     ap.add_argument("--link-port", type=int, default=int(os.environ.get("URM_LINK_PORT", "47800")),
                     help="UDP port of the jam-link beacon on the LAN (0 = off)")
+    ap.add_argument("--sync-port", type=int, default=int(os.environ.get("URM_SYNC_PORT", "5150")),
+                    help="UDP port of the HI5S Wi-Fi sync with HI5, Jaffedrone and fliptribe (0 = off)")
+    ap.add_argument("--sync", default=os.environ.get("URM_SYNC", "auto"), choices=["off", "auto", "lead", "follow"],
+                    help="sync role at start: the page can change it (default auto: the lowest id leads)")
     a = ap.parse_args()
     if a.test:
         return test_order()
@@ -637,7 +821,7 @@ def main():
         return print(send(a.port, "/cmd", cmd))
     if a.status:
         return print(json.dumps(send(a.port, "/status"), indent=1))
-    serve(a.port, a.dir, AIBridge(a.llm, a.tts, a.voice), a.link_port)
+    serve(a.port, a.dir, AIBridge(a.llm, a.tts, a.voice), a.link_port, a.sync_port, a.sync)
 
 
 if __name__ == "__main__":

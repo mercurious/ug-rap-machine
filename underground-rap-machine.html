@@ -123,6 +123,11 @@ select{background:var(--panel-2);border:1px solid var(--line-2);border-radius:7p
 
 .under{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
 .scenes,.flipsrc{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+/* scene buttons carry the left-stick direction that fires them; only the Flip 2 layout has the stick */
+.scene .dir{display:none;width:15px;height:15px;margin:-2px 6px -2px -2px;vertical-align:-3px;transform:rotate(var(--a))}
+.scene .dir circle{fill:none;stroke:currentColor;stroke-width:1.4;opacity:.55}
+.scene .dir path{fill:currentColor}
+.flip .scene .dir{display:inline-block}
 .flipname{font:500 12px var(--f-mono);color:var(--acc-2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* booth */
@@ -169,6 +174,7 @@ input[type=range]:hover::-moz-range-thumb{background:var(--acc)}
 .line.now .mel{color:var(--ink)}
 .line.sung{color:var(--dim)}
 .line.nobuf{opacity:.5}
+.sec .sh i{font-style:normal;color:var(--acc);margin-left:6px}
 .mc-side{display:grid;gap:8px}
 .mc-side .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 12px/1.4 var(--f-mono);color:var(--dim)}
 .mc-side .kv b{color:var(--text);font-weight:500}
@@ -270,7 +276,7 @@ html.flip{background:var(--ground)}
 /* battery gauge and model speedo, between the view buttons and the status chips */
 .flip .sys{margin-left:auto;display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.06em;color:var(--dim)}
 .flip .sys [hidden]{display:none!important}
-.flip .sys .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid var(--line);border-radius:4px;height:21px;box-sizing:border-box}
+.flip .sys .chip{white-space:nowrap;display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid var(--line);border-radius:4px;height:21px;box-sizing:border-box}
 .flip .sys small{font-size:9px;color:var(--faint)}
 .flip .sys .bi{position:relative;width:18px;height:9px;border:1px solid var(--dim);border-radius:2px;box-sizing:border-box}
 .flip .sys .bi::after{content:"";position:absolute;right:-3px;top:2px;width:2px;height:3px;background:var(--dim);border-radius:0 1px 1px 0}
@@ -288,6 +294,11 @@ html.flip{background:var(--ground)}
 .flip .sys .spd{position:relative;width:30px;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
 .flip .sys .spd b{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--acc-2),var(--acc));transition:width .5s}
 .flip .sys .llm.busy{color:var(--acc);border-color:var(--acc)}
+.flip .sys .syn{background:transparent;color:inherit;font:inherit;letter-spacing:inherit;cursor:pointer}
+.flip .sys .syn b{width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.flip .sys .syn.lead b{background:var(--acc)}
+.flip .sys .syn.follow b{background:var(--acc-2)}
+.flip .sys .syn.lead,.flip .sys .syn.follow{color:var(--text)}
 .flip .fstat{display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.12em}
 .flip .fstat b{color:var(--acc);font-weight:600;padding:5px 8px;border:1px solid var(--line);border-radius:4px}
 .flip .fstat i{font-style:normal;color:var(--faint);padding:5px 8px;border:1px solid var(--line);border-radius:4px}
@@ -421,6 +432,7 @@ html.flip{background:var(--ground)}
     <span class="vk">R1</span>
     <span class="sys" id="sys" hidden aria-live="off">
       <span class="chip bat" id="sys-bat" hidden title="Battery"><i class="bi"><b id="sys-fill"></b></i><svg class="bolt" id="sys-bolt" viewBox="0 0 8 12" aria-label="charging" hidden><path d="M5 0 0 7h3l-1 5 6-7H5z"/></svg><span id="sys-pct">—</span><small id="sys-w"></small></span>
+      <button class="chip syn" id="sys-sync" hidden title="Wi-Fi sync with HI5, Jaffedrone and fliptribe: tap for off, auto, lead, follow"><b id="sys-sync-d"></b><span id="sys-sync-t">sync</span></button>
       <span class="chip llm" id="sys-llm" hidden title="Gemma"><i class="throb" id="sys-throb" hidden><b></b><b></b><b></b></i><span id="sys-llm-t">gemma</span><i class="spd" id="sys-spd" hidden><b></b></i></span>
     </span>
     <span class="fstat"><b id="fs-scene">HOOK</b><i id="fs-mic">MIC</i><i id="fs-rec">REC</i><i id="fs-led">LED</i></span>
@@ -438,10 +450,10 @@ html.flip{background:var(--ground)}
       <div class="under">
         <div class="scenes" role="group" aria-label="Scenes">
           <span class="lbl">Scene</span>
-          <button class="btn scene" data-scene="intro" aria-pressed="false">Intro</button>
-          <button class="btn scene" data-scene="verse" aria-pressed="false">Verse</button>
-          <button class="btn scene" data-scene="hook" aria-pressed="true">Hook</button>
-          <button class="btn scene" data-scene="break" aria-pressed="false">Break</button>
+          <button class="btn scene" data-scene="intro" aria-pressed="false" title="Left stick up"><svg class="dir" viewBox="0 0 16 16" aria-hidden="true" style="--a:0deg"><circle cx="8" cy="8" r="7"/><path d="M8 3.6 11.6 8.6H9.4V12H6.6V8.6H4.4Z"/></svg>Intro</button>
+          <button class="btn scene" data-scene="verse" aria-pressed="false" title="Left stick right"><svg class="dir" viewBox="0 0 16 16" aria-hidden="true" style="--a:90deg"><circle cx="8" cy="8" r="7"/><path d="M8 3.6 11.6 8.6H9.4V12H6.6V8.6H4.4Z"/></svg>Verse</button>
+          <button class="btn scene" data-scene="hook" aria-pressed="true" title="Left stick down"><svg class="dir" viewBox="0 0 16 16" aria-hidden="true" style="--a:180deg"><circle cx="8" cy="8" r="7"/><path d="M8 3.6 11.6 8.6H9.4V12H6.6V8.6H4.4Z"/></svg>Hook</button>
+          <button class="btn scene" data-scene="break" aria-pressed="false" title="Left stick left"><svg class="dir" viewBox="0 0 16 16" aria-hidden="true" style="--a:270deg"><circle cx="8" cy="8" r="7"/><path d="M8 3.6 11.6 8.6H9.4V12H6.6V8.6H4.4Z"/></svg>Break</button>
           <button class="btn" id="holdFilter" title="Hold for a low-pass sweep">Hold: filter</button>
         </div>
         <div class="flipsrc">
@@ -541,6 +553,8 @@ html.flip{background:var(--ground)}
         <h2>MC <small>Gemma · llamatalk · Pocket TTS</small></h2>
         <div class="booth-row">
           <select id="aiVoice" aria-label="Singing voice"><option value="">voice: default</option></select>
+          <select id="aiSing" aria-label="Sung or rapped" title="Which sections Gemma sings (held vowels on the beat, at the melody's pitch) and which it raps">
+            <option value="auto">sing: Gemma picks</option><option value="hooks">sing the hooks</option><option value="all">sing it all</option><option value="off">rap only</option></select>
           <div class="ctl sync" title="Where Gemma's lines land: 0 is square on the downbeat, more lets lines come in on a pickup or behind the beat and pulls the melody onto the off-beats"><div class="tl"><label class="lbl" for="aiSync">Syncopation</label><output id="aiSync-out"></output></div><input type="range" id="aiSync" min="0" max="100" step="1"></div>
           <button class="btn" id="aiLoop" aria-pressed="true" title="Ask Gemma for the next song while this one plays">Keep going</button>
           <button class="btn primary ai" id="aiGo" aria-pressed="false">Let Gemma play</button>
@@ -1825,11 +1839,15 @@ function tick() {
     playStep(gstep, nextT);
     if (gstep % 16 === 0) linkPost(gstep, nextT);
     visQ.push({ s: gstep, t: nextT });
-    nextT += 15 / song.bpm; gstep++;
+    nextT += 15 / song.bpm / sync.rate; gstep++;
   }
 }
-function startTransport() {
+function startTransport(at) {
   nextT = ctx.currentTime + 0.08; gstep = 0; playing = true;
+  if (at != null) {   // join a sync leader at its position (16th steps)
+    const sd = 15 / song.bpm, p = at + 0.08 / sd, g = Math.ceil(p);
+    gstep = g; nextT += (g - p) * sd;
+  }
   timer.start(); tick();
   $('#play').setAttribute('aria-pressed', 'true'); $('#play').textContent = '■'; $('#play').setAttribute('aria-label', 'Stop');
 }
@@ -1853,7 +1871,8 @@ function linkPost(gs, t) {
   }
   const s = song, body = { playing: gs >= 0 && playing, bpm: s.bpm, root: s.root, key: NOTES[s.root], mode: s.mode, scale: SCALES[s.mode].iv,
     lane: styleKey, scene, chords: s.chords.map(c => ({ name: c.name, root: c.rootPc, tones: c.tones })),
-    bar: gs >= 0 ? Math.floor(gs / 16) % 4 : 0, barAt: at === null ? null : Math.round(at) };
+    bar: gs >= 0 ? Math.floor(gs / 16) % 4 : 0, barAt: at === null ? null : Math.round(at),
+    gbar: gs >= 0 ? Math.floor(gs / 16) : 0, lat: ctx ? Math.round((ctx.outputLatency || 0) * 1000) : 0 };
   fetch('/link', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } }).catch(() => {});
 }
 function nextBarTime() {
@@ -2439,7 +2458,7 @@ function initUI() {
   $('#vLoad').addEventListener('click', () => $('#vFile').click());
   $('#vFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadVocalFile(f); e.target.value = ''; });
   $('#vPlay').addEventListener('click', toggleVocalFile);
-  const bump = d => { song.bpm = clamp(song.bpm + d, 60, 200); $('#bpm').value = song.bpm; ai.anchor = song.bpm; applySongAudio(); scheduleFlipRender(); };
+  const bump = d => { song.bpm = clamp(Math.round(song.bpm) + d, 60, 200); $('#bpm').value = song.bpm; ai.anchor = song.bpm; applySongAudio(); scheduleFlipRender(); };
   for (const [id, d] of [['#bpmDn', -1], ['#bpmUp', 1]]) {
     let rep = 0;
     const stop = () => { clearInterval(rep); rep = 0; };
@@ -2507,6 +2526,89 @@ function initFlip() {
   document.addEventListener('contextmenu', e => e.preventDefault());   // no long-press menu or selection handles
   if (REMOTE) { remoteLoop(); setInterval(postStatus, 1000); addEventListener('error', e => { lastErr = String(e.message || e); }); }
   sysTick(); setInterval(sysTick, 2000);
+  $('#sys-sync').addEventListener('click', () => {
+    const m = SYNC_MODES[(SYNC_MODES.indexOf(sync.mode) + 1) % SYNC_MODES.length];
+    fetch('/sync', { method: 'POST', body: JSON.stringify({ mode: m }), headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+    sync.mode = m; syncShow();
+  });
+  syncTick();
+}
+/* Wi-Fi sync (HI5S): the bridge speaks the protocol of HI5, Jaffedrone and fliptribe on UDP 5150 and elects a
+   leader (LEAD beats AUTO, then the lowest id). When it is someone else, the page follows it as they do: its
+   tempo, its start and stop (on the change, joining at its position), and its phase: the error to the leader's
+   16th-step position goes through an 8-sample median; over half a step jumps, under that trims the step clock by
+   up to 3%. When the page leads, the bridge sends its position from the bar reports and there is nothing to do. */
+const SYNC_MODES = ['off', 'auto', 'lead', 'follow'];
+const sync = { mode: 'off', ok: false, view: null, lid: 0, was: null, errs: [], rate: 1, drift: 0, off: null, polls: 0, log: [] };
+// ctx.currentTime moves once per audio callback (21 ms at PipeWire's quantum of 1024 here), too coarse for the
+// phase loop. It jumps ahead at each callback and stands still in between, so the largest offset to
+// performance.now() over the last 1.5 s is where the context clock really is; frame() samples it.
+const ctxClk = [];
+function ctxClockSample() {
+  const p = performance.now() / 1000; ctxClk.push([p, ctx.currentTime - p]);
+  while (ctxClk.length && p - ctxClk[0][0] > 1.5) ctxClk.shift();
+}
+function ctxNow() {
+  if (!ctxClk.length) return ctx.currentTime;
+  let o = -Infinity; for (const c of ctxClk) o = Math.max(o, c[1]);
+  return performance.now() / 1000 + o;
+}
+const syncLed = () => !!(sync.ok && sync.mode !== 'off' && sync.view && sync.view.leader);
+async function syncTick() {
+  let v = null;
+  try { v = await (await fetch('/sync', { cache: 'no-store' })).json(); } catch (e) { /* no bridge */ }
+  const t = performance.now();
+  sync.ok = !!(v && !v.unavailable); sync.view = v; sync.polls++;
+  if (sync.ok) { sync.mode = v.mode; syncFollow(v.mode === 'off' ? null : v.leader, t); }
+  syncShow();
+  setTimeout(syncTick, sync.ok ? 100 : 3000);
+}
+function syncFollow(L, t) {
+  if (!L) { if (sync.lid) { sync.lid = 0; sync.was = null; sync.errs = []; sync.rate = 1; sync.drift = 0; sync.off = null; } return; }
+  if (L.id !== sync.lid) { sync.lid = L.id; sync.was = null; sync.errs = []; sync.rate = 1; sync.drift = 0; }
+  if (Math.abs(L.bpm - song.bpm) > 0.01 && L.bpm >= 40 && L.bpm <= 250) {
+    song.bpm = Math.round(L.bpm * 100) / 100; $('#bpm').value = Math.round(song.bpm); ai.anchor = song.bpm;
+    applySongAudio(); scheduleFlipRender();
+  }
+  // the bridge stamps the leader's position on the wall clock this page shares with it: the answer may be read
+  // a frame or two after it was written, and that wait must not count as the leader falling behind
+  const wall = () => performance.timeOrigin + performance.now();
+  const sd = 15 / song.bpm, lp = () => L.pos + (L.playing ? (wall() - (L.at || wall() - (performance.now() - t))) / 1000 / sd : 0);
+  if (L.playing !== sync.was) {
+    const first = sync.was === null; sync.was = L.playing; sync.errs = []; sync.rate = 1;
+    if (L.playing && !playing && ctx && ctx.state === 'running') { startTransport(lp()); return; }
+    if (!L.playing && playing && !first) { stopTransport(); return; }
+  }
+  if (!playing || !L.playing || !ctx) { sync.off = null; return; }
+  const my = gstep - (nextT - ctxNow()) / (sd / sync.rate);
+  let err = (lp() - my) % 16; if (err > 8) err -= 16; else if (err <= -8) err += 16;
+  sync.errs.push(err); if (sync.errs.length > 8) sync.errs.shift();
+  if (REMOTE) { sync.log.push([Math.round(t), +err.toFixed(3), +L.pos.toFixed(2), L.age]); if (sync.log.length > 60) sync.log.shift(); }
+  if (sync.errs.length < 3) return;
+  const med = [...sync.errs].sort((a, b) => a - b)[sync.errs.length >> 1];
+  sync.off = med * sd * 1000;
+  if (Math.abs(med) > 0.5) {   // jump: steps skipped on the way are not played
+    nextT -= med * sd; sync.errs = []; sync.rate = 1 + sync.drift;
+    while (nextT < ctx.currentTime + 0.005) { nextT += sd; gstep++; }
+  } else {
+    // HI5's trim, plus a slow integral of the error: it learns a steady difference in speed (another unit's
+    // crystal, a leader that runs a little slow), so the phase settles on zero instead of a standing offset
+    sync.drift = clamp(sync.drift + 0.004 * med, -0.02, 0.02);
+    sync.rate = 1 + clamp(0.15 * med + sync.drift, -0.03, 0.03);
+  }
+}
+function syncShow() {
+  const c = $('#sys-sync'), v = sync.view;
+  c.hidden = !sync.ok; if (c.hidden) return;
+  const n = v.peers.length, follow = syncLed(), lead = !follow && v.leading && sync.mode !== 'off';
+  let txt = sync.mode === 'auto' ? 'sync' : 'sync ' + sync.mode;
+  if (follow) txt = 'follow' + (sync.off != null ? ` ${sync.off >= 0 ? '+' : ''}${Math.round(sync.off)}ms` : '');
+  else if (lead) txt = `lead ·${n}`;
+  else if (n && sync.mode !== 'off') txt += ` ·${n}`;
+  $('#sys-sync-t').textContent = txt;
+  c.classList.toggle('lead', lead); c.classList.toggle('follow', follow);
+  c.title = `Wi-Fi sync (UDP 5150, HI5S): ${sync.mode}` + (n ? ` · ${n} peer${n > 1 ? 's' : ''}: ` + v.peers.map(p => `${p.ip} ${p.role} ${p.bpm} BPM${p.playing ? ' ▶' : ''}`).join(', ') : ' · nobody else on the network') + ' · tap to change';
+  $('#sys').hidden = false;
 }
 /* battery gauge and Gemma speedo in the views row, fed by GET /sys on the bridge */
 const SYS_DEMO = (location.search.match(/[?&]sysdemo=(\w+)/) || [])[1];   // &sysdemo=writing|prompt|tts|low renders a sample state
@@ -2542,12 +2644,54 @@ async function sysTick() {
     L.classList.toggle('busy', busy);
     L.title = ph === 'writing' ? `Gemma is writing: ${d.ai.tokens} tokens in ${Math.round(d.ai.secs)} s` : ph === 'prompt' ? 'Gemma is reading the beat' : tts.busy ? 'Pocket TTS is singing' : 'Gemma';
   }
-  $('#sys').hidden = B.hidden && L.hidden;
+  $('#sys').hidden = B.hidden && L.hidden && $('#sys-sync').hidden;
 }
 const ledMul = (c, k) => c.map(x => Math.round(clamp(x * k, 0, 255)));
+/* The right ring follows Gemma's voice. Each line's loudness (10 ms frames) and syllable onsets are measured
+   once, when it is synthesized, and the ring reads them at the moment that part of the line is heard. Rapping
+   chases: every syllable steps a bright head one segment round the ring, trailing off in the lane's second
+   colour, with a white tick on the attack. Singing glows: the ring fills as high as the melody note sits, in a
+   colour of its own for each pitch class, and shimmers on the held vowel. */
+function voxEnv(buf) {
+  const d = buf.getChannelData(0), hop = Math.round(buf.sampleRate * 0.01), n = Math.floor(d.length / hop);
+  const env = new Float32Array(n), ons = [];
+  let peak = 1e-6;
+  for (let i = 0; i < n; i++) { let q = 0; for (let j = i * hop; j < (i + 1) * hop; j++) q += d[j] * d[j]; env[i] = Math.sqrt(q / hop); peak = Math.max(peak, env[i]); }
+  let lo = 1, last = -99;
+  for (let i = 0; i < n; i++) {
+    env[i] = Math.min(1, env[i] / peak * 1.15);
+    lo = Math.min(lo, env[i]);
+    if (env[i] > 0.25 && env[i] - lo > 0.2 && i - last >= 9) { ons.push(i / 100); last = i; lo = env[i]; }
+  }
+  return { env, ons };
+}
+const pcRGB = pc => {   // a hue per pitch class, full saturation
+  const h = pc / 12 * 6, x = 1 - Math.abs(h % 2 - 1), k = [[1, x, 0], [x, 1, 0], [0, 1, x], [0, x, 1], [x, 0, 1], [1, 0, x]][Math.floor(h) % 6];
+  return k.map(v => Math.round(v * 255));
+};
+function voxRing(t) {
+  // the line being heard now (output and tuner latency taken off the clock), or null
+  if (!ai.on || !ctx || !ai.vox.length) return null;
+  const now = ctx.currentTime - (ctx.outputLatency || 0) - tunerLatency;
+  let v = null;
+  for (const x of ai.vox) if (x.t <= now && now < x.t + x.dur + 0.1) v = x;
+  if (!v || !v.env) return null;
+  const k = now - v.t, kb = k * v.rate, e = v.env.env[Math.min(v.env.env.length - 1, Math.max(0, Math.floor(kb * 100)))] || 0, B = STYLES[styleKey].led.b, R = [];
+  let j = 0; while (j + 1 < v.notes.length && v.notes[j + 1].t <= k) j++;
+  const n = v.notes[j];
+  if (n && n.sing) {
+    const col = pcRGB(pcOf(sn(song, n.deg))), fill = clamp((n.deg + 3) / 12 * 4, 1, 4);
+    const br = e * (0.82 + 0.18 * Math.sin(k * 2 * Math.PI * 5.5));
+    for (let i = 0; i < 4; i++) R.push(ledMul(col, br * clamp(fill - i, 0.12, 1)));
+  } else {
+    let c = 0, at = -1; for (const o of v.env.ons) if (o <= kb) { c++; at = o; }
+    const head = (c + 3) % 4, hot = at >= 0 && kb - at < 0.05;
+    for (let i = 0; i < 4; i++) { const w = e * [1, 0.35, 0.12, 0.04][(head - i + 4) % 4]; R.push(hot && i === head ? ledMul([255, 255, 255], Math.max(w, 0.6)) : ledMul(B, w)); }
+  }
+  return R;
+}
 function ledTick() {
-  if (led.fail >= 5) return;
-  const t = performance.now(); if (t - led.t < 30) return; led.t = t;
+  const t = performance.now(); if (t - led.t < (led.fail >= 5 ? 5000 : 30)) return; led.t = t;   // no rings: look again every 5 s
   const P = STYLES[styleKey], A = P.led.a, B = P.led.b, L = [], R = [];
   if (playing && lastStep && ctx) {
     const pos = lastStep.s + (ctx.currentTime - lastStep.t) / (15 / song.bpm);
@@ -2562,7 +2706,11 @@ function ledTick() {
   if ((micStream || vFileSrc) && lastInfo) lvl = clamp((20 * Math.log10(lastInfo.rms + 1e-6) + 50) / 45, 0, 1);
   let base = recorder ? ledMul([255, 40, 40], 0.18 + 0.18 * (0.5 + 0.5 * Math.sin(t / 1000 * 2 * Math.PI))) : [0, 0, 0];
   if (t - led.flash < 110) base = [255, 255, 255];
-  for (let i = 0; i < 4; i++) { const k = clamp(lvl * 4 - i, 0, 1); R.push(base.map((v, c) => Math.max(v, Math.round(B[c] * k)))); }
+  const vx = voxRing(t);
+  for (let i = 0; i < 4; i++) {
+    const k = clamp(lvl * 4 - i, 0, 1), m = vx ? vx[i] : B.map(c => Math.round(c * k));
+    R.push(base.map((v, c) => Math.max(v, m[c])));
+  }
   ledSend(JSON.stringify({ l: L, r: R }));
 }
 function ledSend(s) {
@@ -2601,6 +2749,8 @@ async function remoteLoop() {
 function postStatus() {
   const pc = $('#pitch'), r = pc.getBoundingClientRect();
   const st = { t: Date.now(), playing, style: styleKey, bpm: song.bpm, seed: song.seed, scene, view, mic: !!micStream, ctx: ctx ? ctx.state : null,
+    sync: { mode: sync.mode, lid: sync.lid, rate: sync.rate, off: sync.off, peers: sync.view ? sync.view.peers.length : 0, polls: sync.polls, errs: sync.errs.map(e => +e.toFixed(3)), log: sync.log.slice(-30) },
+    ctxT: ctx ? ctx.currentTime : null, perfT: performance.now(),
     sr: ctx ? ctx.sampleRate : null, outLat: ctx ? ctx.outputLatency : null, tuner: tuner ? tuner.mode : null, tunerLat: tunerLatency,
     rms: lastInfo ? lastInfo.rms : null, voiced: lastInfo ? !!lastInfo.v : null, rec: !!recorder, takes: takeN, led: led.on, ledFail: led.fail,
     inner: [innerWidth, innerHeight], dpr: devicePixelRatio, pitchRect: [Math.round(r.width), Math.round(r.height)], pitchClient: [pc.clientWidth, pc.clientHeight],
@@ -2624,7 +2774,7 @@ async function togglePlay() {
    ===================================================================== */
 const THEMES = ['surprise me', 'flexing', 'heartbreak', 'late night drive', 'paranoid', 'summer', 'money phone', 'texting an ex'];
 const ai = { on: false, loop: true, theme: THEMES[0], voices: [], health: null, gen: 0, plan: null, next: null, nextBusy: false, anchor: 0,
-             sync: 45, tok: 0, lineOn: 0, evts: [], srcs: [], timers: [], titles: [], lineEls: [], secEls: [], status: '' };
+             sync: 45, sing: 'auto', tok: 0, lineOn: 0, vox: [], evts: [], srcs: [], timers: [], titles: [], lineEls: [], secEls: [], status: '' };
 const MC = /[?&]mc\b/.test(location.search);
 function initAI() {
   const box = $('#aiThemes');
@@ -2635,6 +2785,7 @@ function initAI() {
   });
   $('#aiGo').addEventListener('click', () => ai.on ? aiStop() : aiStart());
   $('#aiLoop').addEventListener('click', () => { ai.loop = !ai.loop; $('#aiLoop').setAttribute('aria-pressed', String(ai.loop)); });
+  $('#aiSing').addEventListener('change', e => { ai.sing = e.target.value; });
   aiHealth();
   if (MC) setInterval(() => { if (!ai.on) aiHealth(); }, 8000);
 }
@@ -2673,7 +2824,7 @@ async function aiRequestPlan(gen) {
   // the model writes for a minute or two, too long to hold one request open: the bridge starts a job,
   // the page follows it on /ai/progress and fetches the plan when it is done. Returns null if stopped.
   const voices = ai.voices.length ? ai.voices : ['alba'];
-  const body = { state: aiSummary(), tempo: aiTempo(), theme: ai.theme, avoid: ai.titles, voices, sync: ai.sync };
+  const body = { state: aiSummary(), tempo: aiTempo(), theme: ai.theme, avoid: ai.titles, voices, sync: ai.sync, sing: ai.sing };
   const r = await fetch('/ai/plan', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
   const d = await r.json();
   if (!d.job) throw new Error(d.error || 'the bridge did not start a plan');
@@ -2692,15 +2843,184 @@ async function aiRequestPlan(gen) {
     else if (p.phase === 'done') {
       const f = await (await fetch(`/ai/plan?job=${d.job}`, { cache: 'no-store' })).json();
       if (!f.plan) throw new Error(f.error || 'no plan');
+      if (aiLines(f.plan).length < 2) throw new Error('Gemma wrote a song with no lines');
       f.plan.secs = f.secs; f.plan.tokens = f.tokens;
       return f.plan;
     }
   }
 }
+/* The singer, ported from autojam: Pocket TTS speaks the line, this sings it. It finds the syllables in the audio
+   (voiced runs from YIN, split where the level dips), lays the vowel onsets on the beat (quarters, eighths or
+   sixteenths, whatever fits two bars, the last syllable held), stretches only each vowel's loud nucleus to its
+   note while the consonants keep their natural speed, and resynthesises the vowels by TD-PSOLA at the melody's
+   pitch with a 60 ms glide into each note and vibrato on long ones. The grains are the voice's own, so the
+   formants stay. Self-contained: it runs in a Worker (shipped via Function#toString) so the beat never waits.
+   q: { x: Float32Array mono at R Hz (trimmed speech), R, bpm, bars, mel: scale degrees, root: pitch class, iv }
+   → { y: Float32Array at R, notes: [{ t (s), midi, deg }], lead (s before the first vowel) } or null. */
+function singCore(q) {
+  const R = q.R, SR = R / 2, HOP = Math.round(SR * 0.005), W = Math.round(SR * 0.025), K = HOP * 2;   // analysis at half rate
+  const n = Math.floor(q.x.length / 2);
+  if (n < SR / 5) return null;
+  const tauMin = Math.floor(SR / 500), tauMax = Math.floor(SR / 70), nf = Math.floor(n / HOP);
+  const x = new Float32Array(n + W + tauMax + 1);
+  for (let i = 0; i < n; i++) x[i] = 0.5 * (q.x[2 * i] + q.x[2 * i + 1]);
+  const d = new Float32Array(tauMax + 2);
+  const yin = p => {
+    for (let tau = tauMin; tau <= tauMax; tau++) { let s = 0; for (let i = 0; i < W; i += 2) { const dd = x[p + i] - x[p + i + tau]; s += dd * dd; } d[tau] = s; }
+    let run = 0; for (let tau = tauMin; tau <= tauMax; tau++) { run += d[tau]; d[tau] = d[tau] * (tau - tauMin + 1) / (run + 1e-9); }
+    for (let tau = tauMin + 1; tau < tauMax; tau++)
+      if (d[tau] < 0.25 && d[tau] <= d[tau + 1] && d[tau] <= d[tau - 1]) {
+        const a = d[tau - 1], b = d[tau], c = d[tau + 1], den = a - 2 * b + c;
+        return SR / (tau + (Math.abs(den) > 1e-9 ? 0.5 * (a - c) / den : 0));
+      }
+    return 0;
+  };
+  const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+  const midiHz = m => 440 * Math.pow(2, (m - 69) / 12), hzMidi = f => 69 + 12 * Math.log2(f / 440);
+  // 1. frames: level and pitch
+  const rms = new Float32Array(nf), f0 = new Float32Array(nf); let peak = 0;
+  for (let f = 0; f < nf; f++) {
+    const p = f * HOP; let e = 0; for (let i = 0; i < W; i++) e += x[p + i] * x[p + i];
+    rms[f] = Math.sqrt(e / W); peak = Math.max(peak, rms[f]); f0[f] = rms[f] > 1e-3 ? yin(p) : 0;
+  }
+  if (peak <= 0) return null;
+  const voiced = new Uint8Array(nf); for (let f = 0; f < nf; f++) voiced[f] = f0[f] > 0 && rms[f] > 0.06 * peak ? 1 : 0;
+  for (let f = 1; f + 2 < nf; f++) if (!voiced[f] && voiced[f - 1] && (voiced[f + 1] || voiced[f + 2])) voiced[f] = 1;   // close 1-2 frame gaps
+  // 2. syllables: voiced runs of 20 ms or more, split where the level dips well below both sides; a consonant is
+  // at most 150 ms of what comes before the voicing
+  const syl = []; let prevEnd = 0;
+  for (let f = 0; f < nf;) {
+    if (!voiced[f]) { f++; continue; }
+    const a = f; while (f < nf && voiced[f]) f++; const b = f;
+    if (b - a < 4) continue;
+    let a0 = a;
+    for (let m = a + 8; m < b - 8; m++) {
+      let dip = true; for (let k = -2; k <= 2; k++) if (rms[m + k] < rms[m]) dip = false;
+      if (!dip) continue;
+      let left = 0, right = 0; for (let i = a0; i < m; i++) left = Math.max(left, rms[i]); for (let i = m; i < b; i++) right = Math.max(right, rms[i]);
+      if (m - a0 >= 8 && rms[m] < 0.6 * left && rms[m] < 0.6 * right) { syl.push({ cs: Math.max(prevEnd, a0 - 30), vs: a0, ve: m }); prevEnd = m; a0 = m; }
+    }
+    syl.push({ cs: Math.max(prevEnd, a0 - 30), vs: a0, ve: b }); prevEnd = b;
+  }
+  if (!syl.length) return null;
+  for (const s of syl) {   // the nucleus: around the loudest frame, down to half its level; only this part is held
+    let p = s.vs; for (let f = s.vs; f < s.ve; f++) if (rms[f] > rms[p]) p = f;
+    s.ns = p; while (s.ns > s.vs && rms[s.ns - 1] > 0.5 * rms[p]) s.ns--;
+    s.ne = p + 1; while (s.ne < s.ve && rms[s.ne] > 0.5 * rms[p]) s.ne++;
+  }
+  syl[0].cs = Math.max(0, Math.min(syl[0].cs, syl[0].vs - 1)); if (syl[0].vs - syl[0].cs > 30) syl[0].cs = syl[0].vs - 30;
+  const S = syl.length, tailEnd = Math.min(nf, syl[S - 1].ve + 20);   // a final consonant, up to 100 ms
+  // 3. the score: vowel onsets on quarters, eighths or sixteenths (whatever fits), the last syllable held
+  const eighth = 60 / Math.max(40, q.bpm) / 2 * R, usable = 8 * Math.max(1, q.bars) - 2;
+  const unit = S * 2 <= usable - 2 ? 2 : S <= usable - 1 ? 1 : S * 0.5 <= usable - 1 ? 0.5 : Math.max(0.25, (usable - 1) / S);
+  // pitch: the tonic in the octave that puts the melody nearest the voice's own register
+  const vf = []; for (let f = 0; f < nf; f++) if (voiced[f]) vf.push(hzMidi(f0[f]));
+  vf.sort((a, b) => a - b); const voiceMidi = vf.length ? vf[vf.length >> 1] : 57;
+  const iv = q.iv, N = iv.length, mel = q.mel.length ? q.mel : [0], deg = [];
+  const dm = (t, g) => { const o = Math.floor(g / N); return t + o * 12 + iv[g - o * N]; };
+  for (let k = 0; k < S; k++) deg.push(mel[Math.min(mel.length - 1, Math.floor(k * mel.length / S))]);
+  let tonic = q.root % 12 + 24, bestErr = 1e9;
+  for (let t = q.root % 12 + 24; t < 96; t += 12) {
+    let m = 0; for (let k = 0; k < S; k++) m += dm(t, deg[k]); m /= S;
+    if (Math.abs(m - voiceMidi) < bestErr) { bestErr = Math.abs(m - voiceMidi); tonic = t; }
+  }
+  const note = deg.map(g => dm(tonic, g));
+  // output times: consonants before the beat at natural speed (squeezed when the note is short)
+  const cons = [], T = [], vend = [];
+  for (let k = 0; k < S; k++) cons.push((syl[k].vs - syl[k].cs) * K);
+  for (let k = 1; k < S; k++) cons[k] = Math.min(cons[k], 0.45 * unit * eighth);
+  const lead = cons[0];
+  for (let k = 0; k < S; k++) T.push(lead + k * unit * eighth);
+  for (let k = 0; k + 1 < S; k++) vend.push(T[k + 1] - cons[k + 1]);
+  vend.push(Math.max(lead + (usable - 1) * eighth, T[S - 1] + unit * eighth));
+  const tailLen = (tailEnd - syl[S - 1].ve) * K;
+  // the time map, output sample -> source sample: consonant, vowel onset, nucleus (stretched), decay, ...
+  const knots = [];
+  for (let k = 0; k < S; k++) {
+    let pre = (syl[k].ns - syl[k].vs) * K, post = (syl[k].ve - syl[k].ne) * K;
+    const avail = vend[k] - T[k];
+    if (pre + post > 0.8 * avail) { const g = 0.8 * avail / Math.max(1, pre + post); pre *= g; post *= g; }
+    knots.push([T[k] - cons[k], syl[k].cs * K], [T[k], syl[k].vs * K], [T[k] + pre, syl[k].ns * K], [vend[k] - post, syl[k].ne * K], [vend[k], syl[k].ve * K]);
+  }
+  knots.push([vend[S - 1] + tailLen, tailEnd * K]);
+  const srcAt = t => {
+    if (t <= knots[0][0]) return knots[0][1];
+    for (let i = 1; i < knots.length; i++) if (t < knots[i][0]) { const a = knots[i - 1], b = knots[i], u = (t - a[0]) / Math.max(1, b[0] - a[0]); return a[1] + u * (b[1] - a[1]); }
+    return knots[knots.length - 1][1];
+  };
+  // 4. resynthesis at R
+  const pad = Math.round(4096 * R / 48000), src = new Float32Array(q.x.length + pad); src.set(q.x);
+  const f0At = s => f0[Math.max(0, Math.min(nf - 1, Math.floor(s / K)))];
+  const total = Math.floor(vend[S - 1] + tailLen + 0.1 * R), y = new Float32Array(total + pad);
+  // consonants (and the tail): plain overlap-add of 10 ms Hann frames along the map
+  const CH = Math.round(R * 0.005), CF = CH * 2, win = new Float32Array(CF);
+  for (let i = 0; i < CF; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / CF);
+  const copyRange = (t0, t1) => {
+    for (let t = t0 - CH; t < t1; t += CH) {
+      if (t < 0) continue; const s = Math.floor(srcAt(t + CH)) - CH; if (s < 0) continue;
+      const o = Math.floor(t); for (let i = 0; i < CF && s + i < src.length; i++) y[o + i] += src[s + i] * win[i];
+    }
+  };
+  for (let k = 0; k < S; k++) copyRange(T[k] - cons[k], T[k]);
+  copyRange(vend[S - 1], vend[S - 1] + tailLen);
+  // vowels: pitch marks on the source, grains of two source periods placed at the target period
+  const hMin = Math.round(48 * R / 48000), hMax = Math.round(700 * R / 48000), notes = [];
+  for (let k = 0; k < S; k++) {
+    const v0 = syl[k].vs * K, v1 = syl[k].ve * K, marks = [];
+    let P = R / Math.max(70, f0At(v0 + 1)), m = v0;
+    for (let i = v0; i < Math.min(v1, v0 + P); i++) if (src[i] > src[m]) m = i;
+    while (m < v1) {
+      marks.push(m); const f = f0At(m); if (f > 0) P = R / f;
+      const c = m + Math.floor(P), r = Math.floor(P / 4); let best = c;
+      for (let i = c - r; i <= c + r; i++) if (i > m && i < src.length && src[i] > src[best]) best = i;
+      m = best;
+    }
+    if (!marks.length) continue;
+    const prevNote = k > 0 ? note[k - 1] : note[k];
+    for (let t = T[k]; t < vend[k];) {
+      const age = (t - T[k]) / R, len = (vend[k] - T[k]) / R;
+      let midi = prevNote + (note[k] - prevNote) * smooth(age / 0.06);
+      if (len > 0.3) midi += 0.3 * smooth((age - 0.18) / 0.2) * Math.sin(2 * Math.PI * 5.5 * age);
+      const Pout = R / midiHz(midi), s = srcAt(t);
+      let lo = 0, hi = marks.length; while (lo < hi) { const md = (lo + hi) >> 1; if (marks[md] < s) lo = md + 1; else hi = md; }
+      let i = lo; if (i === marks.length || (i > 0 && s - marks[i - 1] < marks[i] - s)) i = i > 0 ? i - 1 : 0;
+      const c = marks[i], f = f0At(c), h = Math.max(hMin, Math.min(hMax, Math.floor(R / (f > 0 ? f : 120))));
+      const gain = Math.min(2, Pout / h), fade = Math.min(1, (vend[k] - t) / (0.03 * R)), o = Math.floor(t);   // a short release
+      for (let j = -h; j < h; j++) {
+        const oi = o + j, si = c + j; if (oi < 0 || si < 0 || si >= src.length) continue;
+        y[oi] += src[si] * (0.5 + 0.5 * Math.cos(Math.PI * j / h)) * gain * fade;
+      }
+      t += Pout;
+    }
+    notes.push({ t: T[k] / R, midi: note[k], deg: deg[k] });
+  }
+  if (!notes.length) return null;
+  // level: the speech's peak, a 20 ms fade at the end
+  const out = y.subarray(0, total); let py = 0, ps = 0;
+  for (let i = 0; i < total; i++) py = Math.max(py, Math.abs(out[i]));
+  for (let i = 0; i < q.x.length; i++) ps = Math.max(ps, Math.abs(q.x[i]));
+  const g = py > 1e-6 ? ps / py : 1, fl = Math.round(0.02 * R);
+  for (let i = 0; i < total; i++) out[i] *= g;
+  for (let i = 0; i < fl && i < total; i++) out[total - 1 - i] *= i / fl;
+  return { y: out.slice(), notes, lead: lead / R };
+}
+const singLine = (() => {
+  let w = null, id = 0; const wait = new Map();
+  try {
+    const src = singCore.toString() + ';onmessage=e=>{let r=null;try{r=singCore(e.data.q);}catch(err){}postMessage({id:e.data.id,r},r?[r.y.buffer]:[]);};';
+    w = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    w.onmessage = e => { const f = wait.get(e.data.id); wait.delete(e.data.id); if (f) f(e.data.r); };
+    w.onerror = () => { w = null; wait.forEach(f => f(null)); wait.clear(); };
+  } catch (e) { w = null; }
+  return q => w ? new Promise(res => { const k = ++id; wait.set(k, res); w.postMessage({ id: k, q }, [q.x.buffer]); })
+                : Promise.resolve((() => { try { return singCore(q); } catch (e) { return null; } })());
+})();
 function aiLines(plan) { const out = []; plan.sections.forEach((s, si) => (s.lines || []).forEach((l, li) => out.push({ ...l, si, li }))); return out; }
 async function aiSynth(plan, gen, onProgress) {
   const voice = $('#aiVoice').value || (ai.voices.includes(plan.voice) ? plan.voice : (ai.health && ai.health.voice) || '');
   plan.voiceUsed = voice;
+  // the performer's sing setting wins over what Gemma wrote
+  plan.sections.forEach(s => { s.sung = ai.sing === 'off' ? false : ai.sing === 'all' ? true : ai.sing === 'hooks' ? s.scene === 'hook' : !!s.sung; });
   const lines = aiLines(plan);
   for (let i = 0; i < lines.length; i++) {
     if (gen !== ai.gen) return false;
@@ -2709,17 +3029,33 @@ async function aiSynth(plan, gen, onProgress) {
     try {
       const r = await fetch('/ai/tts', { method: 'POST', body: JSON.stringify({ text: L.text, voice }), headers: { 'Content-Type': 'application/json' } });
       if (!r.ok) throw new Error('tts ' + r.status);
-      const buf = trimSilence(await ctx.decodeAudioData(await r.arrayBuffer()), 0.01);
-      plan.sections[L.si].lines[L.li].buf = buf;
+      const buf = trimSilence(await ctx.decodeAudioData(await r.arrayBuffer()), 0.01), line = plan.sections[L.si].lines[L.li];
+      line.buf = buf; line.env = voxEnv(buf);
+      if (plan.sections[L.si].sung) {
+        // sung in the plan's own key and tempo (a prefetched plan is not applied yet); played faster or slower if
+        // the tempo has moved by the time it is heard, and the forced auto-tune puts it back on the note
+        const q = { x: buf.getChannelData(0).slice(), R: buf.sampleRate, bpm: aiPlanBpm(plan), bars: 2, mel: (L.melody || [0]).slice(0, 12),
+                    root: NOTES.includes(plan.key) ? NOTES.indexOf(plan.key) : song.root, iv: SCALES[SCALES[plan.mode] ? plan.mode : song.mode].iv };
+        const out = await singLine(q);
+        if (out) {
+          const sb = ctx.createBuffer(1, out.y.length, buf.sampleRate); sb.getChannelData(0).set(out.y);
+          line.sungAs = { buf: sb, env: voxEnv(sb), notes: out.notes, lead: out.lead, bpm: q.bpm };
+        }
+      }
     } catch (e) { plan.sections[L.si].lines[L.li].buf = null; lastErr = 'tts: ' + e.message; }
   }
   return true;
+}
+// the tempo a plan will be played at: what aiApply will make of its bpm (the performer's zone, or the sync leader's)
+function aiPlanBpm(plan) {
+  if (syncLed()) return song.bpm;
+  const z = aiTempo(); return clamp(Math.round(plan.bpm || z.anchor), z.lo, z.hi);
 }
 function aiApply(plan) {
   if (plan.lane && STYLES[plan.lane] && plan.lane !== styleKey) setStyle(plan.lane);
   const P = STYLES[styleKey];
   const z = aiTempo();
-  song.bpm = clamp(Math.round(plan.bpm || z.anchor), z.lo, z.hi); $('#bpm').value = song.bpm;
+  song.bpm = aiPlanBpm(plan); $('#bpm').value = Math.round(song.bpm);
   const key = NOTES.indexOf(plan.key); if (key >= 0) song.root = key;
   if (SCALES[plan.mode]) song.mode = plan.mode;
   if (plan.swing != null) song.swing = clamp(plan.swing, 0, 30) / 100;
@@ -2740,7 +3076,9 @@ function renderPlan(plan) {
   const box = $('#aiLyrics'); box.innerHTML = ''; ai.lineEls = []; ai.secEls = [];
   plan.sections.forEach((s, si) => {
     const sec = el('div', 'sec'); ai.secEls.push(sec);
-    const sh = el('div', 'sh'); sh.append(el('b', '', { text: s.scene }), el('span', '', { text: `${s.bars} bars` + (s.pads && s.pads.length ? ' · pads ' + s.pads.map(p => PADS[clamp(p.pad - 1, 0, 7)].name.toLowerCase()).join(', ') : '') }));
+    const sh = el('div', 'sh'), nm = el('b', '', { text: s.scene });
+    if (s.sung) nm.append(el('i', '', { text: '♪ sung' }));
+    sh.append(nm, el('span', '', { text: `${s.bars} bars` + (s.pads && s.pads.length ? ' · pads ' + s.pads.map(p => PADS[clamp(p.pad - 1, 0, 7)].name.toLowerCase()).join(', ') : '') }));
     sec.append(sh);
     ai.lineEls[si] = [];
     (s.lines || []).forEach((l, li) => {
@@ -2791,10 +3129,22 @@ function aiStartPlan(plan, gen, at) {
     let cursor = start;
     (s.lines || []).forEach((l, li) => {
       if (!l.buf) return;
+      if (s.sung && l.sungAs) {
+        // sung: the line was rendered on a 2-bar grid; it starts its lead-in consonant early so the first vowel
+        // lands on the downbeat, a bar later if the previous line is still going
+        const S = l.sungAs, rate = song.bpm / S.bpm, lead = S.lead / rate;
+        if (t0 + cursor * barDur - lead < lastEnd + 0.02) cursor++;
+        const at = t0 + cursor * barDur - lead, dur = S.buf.duration / rate;
+        evts.push({ t: at, kind: 'line', line: l, buf: S.buf, env: S.env, rate, si, li, dur, sung: true,
+                    mel: S.notes.map(n => n.deg), times: S.notes.map(n => n.t / rate) });
+        lastEnd = at + dur;
+        cursor += Math.max(1, Math.ceil((dur - lead + 0.05) / barDur));
+        return;
+      }
       const mel = (l.melody || []).slice(0, 8), barAt = t0 + cursor * barDur;
       const ph = aiPhrase(l.buf.duration, Math.max(1, mel.length), amt, R, lastEnd + 0.05 - barAt);
       const need = Math.max(1, Math.ceil((Math.max(0, ph.off) + l.buf.duration + 0.12) / barDur));
-      evts.push({ t: barAt + ph.off, kind: 'line', line: l, si, li, dur: l.buf.duration, mel, times: ph.times });
+      evts.push({ t: barAt + ph.off, kind: 'line', line: l, buf: l.buf, env: l.env, rate: 1, si, li, dur: l.buf.duration, mel, times: ph.times });
       lastEnd = barAt + ph.off + l.buf.duration;
       cursor += need;
     });
@@ -2817,7 +3167,9 @@ function aiTick() {
     if (e.kind === 'scene') later(() => { setScene(e.scene); ai.secEls.forEach((s, i) => s.classList.toggle('now', i === e.si)); }, wait);
     else if (e.kind === 'pad') firePad(e.i, e.t);
     else if (e.kind === 'line') {
-      const src = ctx.createBufferSource(); src.buffer = e.line.buf; src.connect(N.vin); src.start(e.t); ai.srcs.push(src);
+      const src = ctx.createBufferSource(); src.buffer = e.buf; src.playbackRate.value = e.rate; src.connect(N.vin); src.start(e.t); ai.srcs.push(src);
+      ai.vox = ai.vox.filter(v => v.t + v.dur > ctx.currentTime - 1);
+      ai.vox.push({ t: e.t, dur: e.dur, env: e.env, rate: e.rate, notes: e.mel.map((d, j) => ({ t: e.times[j], deg: d, sing: !!e.sung })) });
       // a line with a pickup starts under the previous line's tail: the tuner follows whichever line began last
       const tok = ++ai.tok, forced = tuner && voc.scale !== 'off', note = d => forced && tuner.post({ keys: degMask(d) });
       later(() => { ai.lineOn = tok; if (e.mel.length) note(e.mel[0]);
@@ -2832,7 +3184,10 @@ function aiEnd(at) {
   if (!ai.on) return;
   const gen = ai.gen;
   if (ai.next) { const p = ai.next; ai.next = null; aiApply(p); aiStartPlan(p, gen, at); if (ai.loop) aiPrefetch(gen); }
-  else { aiSay(`“${ai.plan.title}” again` + (ai.loop ? ' · waiting for the next one' : '')); aiStartPlan(ai.plan, gen, at); }
+  else {
+    aiSay(`“${ai.plan.title}” again` + (ai.loop ? ' · waiting for the next one' : '')); aiStartPlan(ai.plan, gen, at);
+    if (ai.loop && !ai.nextBusy) aiPrefetch(gen);   // the last request failed: ask again while this one loops
+  }
 }
 async function aiPrefetch(gen) {
   if (ai.nextBusy) return; ai.nextBusy = true;
@@ -2859,7 +3214,7 @@ async function aiStart() {
   } catch (e) { aiSay('Gemma could not play: ' + e.message, true); aiStop(); }
 }
 function aiStop() {
-  ai.on = false; ai.gen++; ai.evts = []; ai.next = null; ai.lineOn = 0;
+  ai.on = false; ai.gen++; ai.evts = []; ai.next = null; ai.lineOn = 0; ai.vox = [];
   ai.timers.forEach(clearTimeout); ai.timers = [];
   ai.srcs.forEach(s => { try { s.stop(); } catch (e) { /* already done */ } }); ai.srcs = [];
   if (ctx) pushTuner();
@@ -2957,7 +3312,7 @@ function frame() {
     if (recorder) $('#recTime').textContent = '● ' + fmtTime((performance.now() - recStart) / 1000);
   }
   drawScope(); drawPitch(); drawReadout();
-  if (FLIP) { ledTick(); flipStatus(); }
+  if (FLIP) { if (ctx) ctxClockSample(); ledTick(); flipStatus(); }
   aiTick();
 }
 

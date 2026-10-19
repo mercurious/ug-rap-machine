@@ -9,6 +9,7 @@
 #   (tts-server) from the retro-voice-chat llamatalk kit for the MC mode; URM_MODEL=e2b for the small
 #   model. URM_LLM_PORT=8096 URM_TTS_PORT=8097 URM_VOICE=alba
 #   URM_LINK_PORT=47800 the jam-link beacon on the LAN (tempo, key, chords for autojam; 0 = off)
+#   URM_SYNC=auto URM_SYNC_PORT=5150 Wi-Fi sync with HI5, Jaffedrone and fliptribe (HI5S; off|auto|lead|follow, port 0 = off)
 
 [ -f /etc/profile ] && . /etc/profile >/dev/null 2>&1
 APP=/storage/apps/rap-machine
