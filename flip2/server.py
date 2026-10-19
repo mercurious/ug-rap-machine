@@ -22,7 +22,7 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
                                                              number, GET /ai/progress follows it, GET /ai/plan?job=N
                                                              fetches the result; POST /ai/tts sings a line; GET
                                                              /ai/health reports the servers;
-  GET /sys                                                   battery and model activity for the views-row gauges
+  GET /sys                                                   battery and model activity for the page gauges
   POST /link    the page, once a bar: tempo, key, mode, the chord loop, which bar and when its downbeat is heard;
                 GET /link returns it. The bridge beacons it on the LAN (UDP broadcast, --link-port, default
                 47800, 0 = off) four times a second, with the next downbeat as "nextBarIn" milliseconds from the
@@ -632,7 +632,7 @@ def make_handler(state, directory):
                     return self._json(400, {"error": "job=N needed"})
                 res = state.ai.fetch_plan(job)
                 return self._json(200 if "plan" in res else 404, res)
-            if path == "/sys":   # the battery gauge and the Gemma speedo in the handheld's views row
+            if path == "/sys":   # the handheld's battery gauge and Gemma speedo
                 with state.ai.lock:
                     prog, tts = dict(state.ai.progress), dict(state.ai.tts_state)
                 if prog.get("phase") == "writing" and prog.get("secs"):

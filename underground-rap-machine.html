@@ -128,6 +128,11 @@ select{background:var(--panel-2);border:1px solid var(--line-2);border-radius:7p
 .scene .dir circle{fill:none;stroke:currentColor;stroke-width:1.4;opacity:.55}
 .scene .dir path{fill:currentColor}
 .flip .scene .dir{display:inline-block}
+.flipsrc[hidden]{display:none}
+/* the filter button carries the trigger that holds it; only the Flip 2 layout has the trigger */
+#holdFilter .pk{display:none;font:600 9px/1 var(--f-mono);letter-spacing:.04em;border:1.4px solid currentColor;border-radius:5px 5px 3px 3px;padding:2px 3px;margin:-3px 6px -3px -2px;vertical-align:1px;opacity:.75}
+.flip #holdFilter .pk{display:inline-block}
+.flip #holdFilter .hk{display:none}
 .flipname{font:500 12px var(--f-mono);color:var(--acc-2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* booth */
@@ -186,6 +191,11 @@ input[type=range]:hover::-moz-range-thumb{background:var(--acc)}
 .btn.ai[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--ink)}
 .flip .mc-body{grid-template-columns:minmax(0,1fr) 240px;gap:8px}
 .flip .mc .booth-row .sync{width:120px}
+/* one line whatever the selects show: the subtitle gives way rather than wrapping the header */
+.flip .mc>.ph{flex-wrap:nowrap}
+.flip .mc>.ph h2{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flip .mc>.ph .booth-row{flex:none;flex-wrap:nowrap}
+.flip .mc>.ph select{width:150px;text-overflow:ellipsis}
 .flip .lyrics{max-height:300px;overflow:auto;gap:6px}
 .flip .sec{padding:5px 8px;gap:2px}
 .flip .line{font-size:12px;padding:1px 5px}
@@ -273,8 +283,16 @@ html.flip{background:var(--ground)}
 .flip .views{display:flex;gap:6px;align-items:center}
 .flip .views .view{flex:0 0 auto;padding:9px 16px}
 .flip .vk{font:600 10px/1 var(--f-mono);color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:3px 5px}
-/* battery gauge and model speedo, between the view buttons and the status chips */
-.flip .sys{margin-left:auto;display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.06em;color:var(--dim)}
+/* model speedo between the view buttons and the status chips, given whatever width is left; Wi-Fi sync and
+   the battery gauge sit bottom right on every view: at the end of the bottom row where the view has one
+   (see setView), otherwise pinned to the corner */
+.flip .sys{margin-left:auto;display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.06em;color:var(--dim);min-width:0}
+.flip .machine{position:relative}
+.flip .machine>.sys{position:absolute;right:19px;bottom:17px;z-index:2}
+.flip .views>*{flex-shrink:0}
+.flip .views>.sys{flex-shrink:1}
+.flip .sys .llm{max-width:100%;overflow:hidden}
+.flip .sys .llm>span{overflow:hidden;text-overflow:ellipsis}
 .flip .sys [hidden]{display:none!important}
 .flip .sys .chip{white-space:nowrap;display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid var(--line);border-radius:4px;height:21px;box-sizing:border-box}
 .flip .sys small{font-size:9px;color:var(--faint)}
@@ -330,7 +348,7 @@ html.flip{background:var(--ground)}
 .flip .flipname{max-width:200px;font-size:11px}
 /* booth */
 /* the pitch trace is the only row that gives; the sliders set the height of rows 3-4 and the two
-   control rows sit side by side along the bottom */
+   control rows sit side by side along the bottom, the second one ending in the sync and battery chips */
 .flip .panel[data-view="booth"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:6px 12px}
 .flip .panel[data-view="booth"]>.ph{grid-column:1/-1;grid-row:1}
 .flip .panel[data-view="booth"]>.warn{grid-column:1;grid-row:2;font-size:11px;margin:0}
@@ -342,12 +360,15 @@ html.flip{background:var(--ground)}
 .flip .panel[data-view="booth"]>.booth-row{grid-column:1;grid-row:5;flex-wrap:nowrap;align-self:center}
 .flip .panel[data-view="booth"]>.ctls{grid-column:2;grid-row:3/5;align-content:start;gap:4px 12px}
 .flip .panel[data-view="booth"]>.file-line{grid-column:2;grid-row:5;align-self:center;justify-content:flex-end;border-top:0;padding-top:0;gap:6px;flex-wrap:nowrap}
+.flip .panel[data-view="booth"]>.file-line>.lbl{display:none}
+.flip .panel[data-view="booth"]>.file-line>*{flex-shrink:0}
+.flip .panel[data-view="booth"]>.file-line>#vName{flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .flip .ctl{gap:2px}
 .flip input[type=range]{height:26px}
 .flip input[type=range]::-webkit-slider-thumb{width:18px;height:22px;margin-top:-9px}
 .flip input[type=range]::-moz-range-thumb{width:18px;height:22px}
 /* pads */
-.flip .panel[data-view="pads"]{grid-template-rows:auto minmax(0,1fr)}
+.flip .panel[data-view="pads"]{grid-template-rows:auto minmax(0,1fr);padding-bottom:35px}   /* room for the corner chips */
 .flip .panel[data-view="pattern"],.flip .panel[data-view="mc"]{align-content:start}
 .flip .pads{gap:8px;height:100%}
 .flip .pad-hit{aspect-ratio:auto;height:100%;min-height:110px;padding:10px 12px}
@@ -431,8 +452,6 @@ html.flip{background:var(--ground)}
     <button class="btn view" data-view="mc" aria-pressed="false">MC</button>
     <span class="vk">R1</span>
     <span class="sys" id="sys" hidden aria-live="off">
-      <span class="chip bat" id="sys-bat" hidden title="Battery"><i class="bi"><b id="sys-fill"></b></i><svg class="bolt" id="sys-bolt" viewBox="0 0 8 12" aria-label="charging" hidden><path d="M5 0 0 7h3l-1 5 6-7H5z"/></svg><span id="sys-pct">—</span><small id="sys-w"></small></span>
-      <button class="chip syn" id="sys-sync" hidden title="Wi-Fi sync with HI5, Jaffedrone and fliptribe: tap for off, auto, lead, follow"><b id="sys-sync-d"></b><span id="sys-sync-t">sync</span></button>
       <span class="chip llm" id="sys-llm" hidden title="Gemma"><i class="throb" id="sys-throb" hidden><b></b><b></b><b></b></i><span id="sys-llm-t">gemma</span><i class="spd" id="sys-spd" hidden><b></b></i></span>
     </span>
     <span class="fstat"><b id="fs-scene">HOOK</b><i id="fs-mic">MIC</i><i id="fs-rec">REC</i><i id="fs-led">LED</i></span>
@@ -454,9 +473,10 @@ html.flip{background:var(--ground)}
           <button class="btn scene" data-scene="verse" aria-pressed="false" title="Left stick right"><svg class="dir" viewBox="0 0 16 16" aria-hidden="true" style="--a:90deg"><circle cx="8" cy="8" r="7"/><path d="M8 3.6 11.6 8.6H9.4V12H6.6V8.6H4.4Z"/></svg>Verse</button>
           <button class="btn scene" data-scene="hook" aria-pressed="true" title="Left stick down"><svg class="dir" viewBox="0 0 16 16" aria-hidden="true" style="--a:180deg"><circle cx="8" cy="8" r="7"/><path d="M8 3.6 11.6 8.6H9.4V12H6.6V8.6H4.4Z"/></svg>Hook</button>
           <button class="btn scene" data-scene="break" aria-pressed="false" title="Left stick left"><svg class="dir" viewBox="0 0 16 16" aria-hidden="true" style="--a:270deg"><circle cx="8" cy="8" r="7"/><path d="M8 3.6 11.6 8.6H9.4V12H6.6V8.6H4.4Z"/></svg>Break</button>
-          <button class="btn" id="holdFilter" title="Hold for a low-pass sweep">Hold: filter</button>
+          <button class="btn" id="holdFilter" title="Hold for a low-pass sweep"><span class="pk">L2</span><span class="hk">Hold: </span>filter</button>
         </div>
-        <div class="flipsrc">
+        <!-- parked: loading a file crashes the handheld build -->
+        <div class="flipsrc" hidden>
           <span class="lbl">Flip sample</span>
           <span class="flipname" id="flipName">generated choir loop</span>
           <button class="btn" id="flipLoad">Load audio…</button>
@@ -577,6 +597,10 @@ html.flip{background:var(--ground)}
     <span><kbd>Space</kbd> play/stop · <kbd>G</kbd> generate · <kbd>N</kbd> next artist · <kbd>1</kbd>–<kbd>8</kbd> pads · <kbd>I</kbd> <kbd>V</kbd> <kbd>H</kbd> <kbd>B</kbd> scenes · hold <kbd>F</kbd> filter · <kbd>R</kbd> record · <kbd>M</kbd> mic</span>
     <span>Everything is synthesized in your browser — no samples are downloaded.</span>
   </footer>
+  <span class="sys" id="sys-low" hidden aria-live="off">
+    <button class="chip syn" id="sys-sync" hidden title="Wi-Fi sync with HI5, Jaffedrone and fliptribe: tap for off, auto, lead, follow"><b id="sys-sync-d"></b><span id="sys-sync-t">sync</span></button>
+    <span class="chip bat" id="sys-bat" hidden title="Battery"><i class="bi"><b id="sys-fill"></b></i><svg class="bolt" id="sys-bolt" viewBox="0 0 8 12" aria-label="charging" hidden><path d="M5 0 0 7h3l-1 5 6-7H5z"/></svg><span id="sys-pct">—</span><small id="sys-w"></small></span>
+  </span>
 </div>
 
 <script>
@@ -2502,6 +2526,9 @@ function setView(v) {
   $$('.panel[data-view]').forEach(e => { e.hidden = FLIP && e.dataset.view !== v; });
   $$('.view').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
   if (v === 'pattern') fitGrid();
+  // the sync and battery chips end the view's bottom row where it has room for them, else sit in the corner
+  const slot = { pattern: '.under', booth: '.panel[data-view="booth"]>.file-line' }[v];
+  if (FLIP) (slot ? $(slot) : $('.machine')).append($('#sys-low'));
 }
 function stepView(d) { if (FLIP) setView(VIEWS[(VIEWS.indexOf(view) + d + VIEWS.length) % VIEWS.length]); }
 
@@ -2608,13 +2635,13 @@ function syncShow() {
   $('#sys-sync-t').textContent = txt;
   c.classList.toggle('lead', lead); c.classList.toggle('follow', follow);
   c.title = `Wi-Fi sync (UDP 5150, HI5S): ${sync.mode}` + (n ? ` · ${n} peer${n > 1 ? 's' : ''}: ` + v.peers.map(p => `${p.ip} ${p.role} ${p.bpm} BPM${p.playing ? ' ▶' : ''}`).join(', ') : ' · nobody else on the network') + ' · tap to change';
-  $('#sys').hidden = false;
+  $('#sys-low').hidden = false;
 }
-/* battery gauge and Gemma speedo in the views row, fed by GET /sys on the bridge */
+/* Gemma speedo in the views row and battery gauge in the corner, fed by GET /sys on the bridge */
 const SYS_DEMO = (location.search.match(/[?&]sysdemo=(\w+)/) || [])[1];   // &sysdemo=writing|prompt|tts|low renders a sample state
 async function sysTick() {
   let d;
-  try { d = await (await fetch('/sys', { cache: 'no-store' })).json(); } catch (e) { $('#sys').hidden = true; return; }
+  try { d = await (await fetch('/sys', { cache: 'no-store' })).json(); } catch (e) { $('#sys').hidden = true; $('#sys-low').hidden = $('#sys-sync').hidden; return; }
   if (SYS_DEMO) {
     d.bat = { pct: SYS_DEMO === 'low' ? 9 : 63, status: SYS_DEMO === 'low' ? 'Discharging' : 'Charging', w: 4.2 };
     d.llm = true; d.ai = { prompt: { phase: 'prompt' }, writing: { phase: 'writing', tokens: 212, secs: 48, tps: 4.4 } }[SYS_DEMO] || { phase: 'done', tokens: 343, secs: 68 };
@@ -2644,7 +2671,8 @@ async function sysTick() {
     L.classList.toggle('busy', busy);
     L.title = ph === 'writing' ? `Gemma is writing: ${d.ai.tokens} tokens in ${Math.round(d.ai.secs)} s` : ph === 'prompt' ? 'Gemma is reading the beat' : tts.busy ? 'Pocket TTS is singing' : 'Gemma';
   }
-  $('#sys').hidden = B.hidden && L.hidden && $('#sys-sync').hidden;
+  $('#sys').hidden = L.hidden;
+  $('#sys-low').hidden = B.hidden && $('#sys-sync').hidden;
 }
 const ledMul = (c, k) => c.map(x => Math.round(clamp(x * k, 0, 255)));
 /* The right ring follows Gemma's voice. Each line's loudness (10 ms frames) and syllable onsets are measured
