@@ -147,6 +147,7 @@ select{background:var(--panel-2);border:1px solid var(--line-2);border-radius:7p
 .warn{font-size:12px;color:var(--warn)}
 .msg{font-size:12px;color:var(--warn);min-height:0}
 .msg:empty{display:none}
+#micDev{max-width:210px;text-overflow:ellipsis}
 .ctls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px}
 .ctl{display:grid;gap:6px}
 .ctl .tl{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -351,6 +352,7 @@ html.flip{background:var(--ground)}
    control rows sit side by side along the bottom, the second one ending in the sync and battery chips */
 .flip .panel[data-view="booth"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:6px 12px}
 .flip .panel[data-view="booth"]>.ph{grid-column:1/-1;grid-row:1}
+.flip #micDev{max-width:170px;padding:4px 6px;font-size:12px}
 .flip .panel[data-view="booth"]>.warn{grid-column:1;grid-row:2;font-size:11px;margin:0}
 .flip .panel[data-view="booth"]>.msg{grid-column:2;grid-row:2;font-size:11px;margin:0}
 .flip .pitch{grid-column:1;grid-row:3;height:100%;min-height:0;min-width:0}
@@ -490,6 +492,7 @@ html.flip{background:var(--ground)}
       <div class="ph">
         <h2>Vocal booth <small>auto-tune</small></h2>
         <div class="booth-row">
+          <select id="micDev" aria-label="Microphone" title="Which mic the booth listens to. Auto takes a USB mic when one is plugged in, otherwise the system default"><option value="">mic: auto (USB first)</option></select>
           <button class="btn primary" id="mic" aria-pressed="false">Enable mic</button>
           <button class="btn" id="monitor" aria-pressed="true">Monitor</button>
         </div>
@@ -1967,30 +1970,126 @@ function onPitch(d) {
    MIC / VOCAL FILE
    ===================================================================== */
 function boothMsg(t) { $('#boothMsg').textContent = t || ''; }
+/* ---------- which mic: auto takes a USB mic, a picked one is remembered by id and label ----------
+   Unplugging the mic turns it off rather than falling back to the built-in one, which would feed back
+   through the speakers; plugging the same mic back in turns it on again. */
+const MIC_KEY = 'urm.mic', MIC_BASE = { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 };
+// Chrome appends the USB vendor:product id ("Shure MV7 (14ed:1012)"); Firefox shows the PipeWire or CoreAudio name
+const USB_MIC = /\busb\b|\([0-9a-f]{4}:[0-9a-f]{4}\)|shure|rode|yeti|snowball|samson|audio-technica|at20[0-9]{2}|hyperx|elgato|fifine|razer|focusrite|scarlett|tascam|behringer|presonus|maono|tonor/i;
+let micPref = { id: '', label: '' }, micDevs = [], micLost = '', micBusy = false;
+let micAn = null, micBuf = null, micWatch = 0, micQuietSince = 0, micQuietShown = false;
+try { micPref = { ...micPref, ...JSON.parse(localStorage.getItem(MIC_KEY) || '{}') }; } catch (e) {}
+function saveMicPref() { try { localStorage.setItem(MIC_KEY, JSON.stringify(micPref)); } catch (e) {} }
+const micUsb = d => USB_MIC.test(d.label) && !/built-?in|internal/i.test(d.label);
+const micTrack = () => micStream && micStream.getAudioTracks()[0];
+async function listMics() {
+  try {
+    micDevs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput'
+      && d.deviceId !== 'default' && d.deviceId !== 'communications' && !/^monitor of/i.test(d.label));
+  } catch (e) { micDevs = []; }
+  // device ids can change when site data is cleared: follow the picked mic by its name
+  const byLabel = micPref.label && !micDevs.some(d => d.deviceId === micPref.id) && micDevs.find(d => d.label === micPref.label);
+  if (byLabel) { micPref.id = byLabel.deviceId; saveMicPref(); }
+  renderMicDevs();
+  return micDevs;
+}
+function pickMic() {      // a device, or null for the system default
+  return (micPref.id && micDevs.find(d => d.deviceId === micPref.id)) || micDevs.find(micUsb) || null;
+}
+function renderMicDevs() {
+  const sel = $('#micDev'), tr = micTrack(), short = t => t.length > 30 ? t.slice(0, 28) + '…' : t;
+  const opts = [new Option(tr && !micPref.id ? 'mic: auto · ' + short(tr.label || 'default') : 'mic: auto (USB first)', '')];
+  micDevs.forEach((d, i) => opts.push(new Option(short(d.label || 'mic ' + (i + 1)) + (micUsb(d) ? ' · USB' : ''), d.deviceId)));
+  if (micPref.id && !micDevs.some(d => d.deviceId === micPref.id)) opts.push(new Option(short(micPref.label || 'picked mic') + ' (unplugged)', micPref.id));
+  sel.replaceChildren(...opts); sel.value = micPref.id;
+}
+async function openMic() {
+  const d = pickMic();
+  if (!d) return navigator.mediaDevices.getUserMedia({ audio: MIC_BASE });
+  try { return await navigator.mediaDevices.getUserMedia({ audio: { ...MIC_BASE, deviceId: { exact: d.deviceId } } }); }
+  catch (e) { if (e.name === 'NotAllowedError') throw e; return navigator.mediaDevices.getUserMedia({ audio: MIC_BASE }); }
+}
+async function startMic() {
+  if (!micDevs.some(d => d.label)) await listMics();
+  const blind = !micDevs.some(d => d.label);
+  let st = await openMic();
+  if (blind) {             // names only show once the page may use the mic, so auto couldn't see the USB one yet
+    await listMics();
+    const d = pickMic();
+    if (d && d.deviceId !== st.getAudioTracks()[0].getSettings().deviceId) { st.getTracks().forEach(t => t.stop()); st = await openMic(); }
+  }
+  micStream = st; micSrc = ctx.createMediaStreamSource(st); micSrc.connect(N.vin);
+  micAn = ctx.createAnalyser(); micAn.fftSize = 2048; micBuf = new Float32Array(micAn.fftSize); micSrc.connect(micAn);
+  const tr = micTrack();
+  tr.onended = () => { if (micTrack() === tr) micGone(tr.label); };
+  micQuietSince = 0; micQuietShown = false; micWatch = setInterval(watchMic, 500);
+  $('#mic').setAttribute('aria-pressed', 'true'); $('#mic').textContent = 'Mic on';
+  renderMicDevs();
+}
+function stopMic() {
+  if (!micStream) return;
+  clearInterval(micWatch);
+  micStream.getTracks().forEach(t => { t.onended = null; t.stop(); }); micSrc.disconnect();
+  micStream = null; micSrc = null; micAn = null;
+  $('#mic').setAttribute('aria-pressed', 'false'); $('#mic').textContent = 'Enable mic';
+  renderMicDevs();
+}
+function micErr(e) {
+  boothMsg(e.name === 'NotAllowedError'
+    ? 'Microphone access was blocked. Allow the mic for this page (the icon in the address bar), then press Enable mic again.'
+    : 'Could not open a microphone: ' + (e.message || e.name));
+}
 async function toggleMic() {
   await ensureAudio();
   if (ctx.state !== 'running') await ctx.resume();
-  if (micStream) {
-    micStream.getTracks().forEach(t => t.stop()); micSrc.disconnect(); micStream = null; micSrc = null;
-    $('#mic').setAttribute('aria-pressed', 'false'); $('#mic').textContent = 'Enable mic';
-    return;
-  }
+  if (micBusy) return;
+  micLost = '';
+  if (micStream) { stopMic(); boothMsg(''); return; }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     boothMsg('Mic access needs a secure page. Open it from http://localhost (see the run command) rather than a plain file.');
     return;
   }
-  try {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
-  } catch (e) {
-    micStream = null;
-    boothMsg(e.name === 'NotAllowedError'
-      ? 'Microphone access was blocked. Allow the mic for this page (the icon in the address bar), then press Enable mic again.'
-      : 'Could not open a microphone: ' + (e.message || e.name));
-    return;
+  micBusy = true;
+  try { await startMic(); boothMsg(''); } catch (e) { micErr(e); } finally { micBusy = false; }
+}
+async function switchMic(msg) {
+  if (micBusy) return;
+  micBusy = true; stopMic();
+  try { await startMic(); boothMsg(msg || ''); } catch (e) { micErr(e); } finally { micBusy = false; }
+}
+function micGone(label) {
+  stopMic(); micLost = label || 'the mic';
+  boothMsg(`${micLost} was unplugged, so the mic is off. Plug it back in and it comes back on, or pick another mic and press Enable mic.`);
+}
+async function onMicDevices() {
+  const before = micDevs.map(d => d.deviceId);
+  await listMics();
+  const tr = micTrack();
+  if (tr) {
+    const id = tr.getSettings().deviceId;
+    if (tr.readyState === 'ended' || (id && !/^(default|communications)$/.test(id) && !micDevs.some(d => d.deviceId === id))) { micGone(tr.label); return; }
+    const d = !micPref.id && pickMic();    // auto: a USB mic that just arrived takes over
+    if (d && d.deviceId !== id && !before.includes(d.deviceId)) await switchMic(`Switched to ${d.label}.`);
+  } else if (micLost) {
+    const d = micDevs.find(x => x.label === micLost);
+    if (!d || micBusy || !ctx) return;
+    micLost = ''; micBusy = true;
+    try { await startMic(); boothMsg(`${d.label} is back, mic on.`); } catch (e) { micErr(e); } finally { micBusy = false; }
   }
-  micSrc = ctx.createMediaStreamSource(micStream); micSrc.connect(N.vin);
-  boothMsg('');
-  $('#mic').setAttribute('aria-pressed', 'true'); $('#mic').textContent = 'Mic on';
+}
+// a live mic is never exactly zero; a run of digital silence means it's muted on the mic or in the system mixer
+function watchMic() {
+  if (!micAn || ctx.state !== 'running') return;
+  micAn.getFloatTimeDomainData(micBuf);
+  let pk = 0;
+  for (let i = 0; i < micBuf.length; i++) pk = Math.max(pk, Math.abs(micBuf[i]));
+  if (pk > 0) { micQuietSince = 0; if (micQuietShown) { micQuietShown = false; boothMsg(''); } return; }
+  const t = performance.now();
+  if (!micQuietSince) micQuietSince = t;
+  else if (t - micQuietSince > 2500 && !micQuietShown) {
+    micQuietShown = true;
+    boothMsg(`No signal from ${micTrack().label || 'the mic'}. Is it muted, on the mic itself or in the system mixer?`);
+  }
 }
 let vFileBuf = null, vFileSrc = null;
 async function loadVocalFile(file) {
@@ -2446,6 +2545,15 @@ function initUI() {
   $('#flipReset').addEventListener('click', () => { flip.user = null; $('#flipName').textContent = 'generated choir loop'; $('#flipReset').hidden = true; });
   // booth
   $('#mic').addEventListener('click', toggleMic);
+  $('#micDev').addEventListener('change', e => {
+    const d = micDevs.find(x => x.deviceId === e.target.value);
+    micPref = d ? { id: d.deviceId, label: d.label } : { id: '', label: '' }; saveMicPref();
+    if (micStream) switchMic(); else renderMicDevs();
+  });
+  if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+    listMics();
+    navigator.mediaDevices.addEventListener('devicechange', onMicDevices);
+  }
   $('#monitor').addEventListener('click', () => { voc.monitor = !voc.monitor; $('#monitor').setAttribute('aria-pressed', String(voc.monitor)); applyVocal(); });
   $('#v-scale').addEventListener('change', () => { voc.scale = $('#v-scale').value; pushTuner(); $('#lockName').textContent = lockLabel(); });
   $('#v-range').addEventListener('change', () => { voc.range = +$('#v-range').value; pushTuner(); });
@@ -2776,7 +2884,9 @@ async function remoteLoop() {
 }
 function postStatus() {
   const pc = $('#pitch'), r = pc.getBoundingClientRect();
-  const st = { t: Date.now(), playing, style: styleKey, bpm: song.bpm, seed: song.seed, scene, view, mic: !!micStream, ctx: ctx ? ctx.state : null,
+  const st = { t: Date.now(), playing, style: styleKey, bpm: song.bpm, seed: song.seed, scene, view, mic: !!micStream,
+    micDev: micTrack() ? { label: micTrack().label, set: micTrack().getSettings(), pref: micPref.label || 'auto', quiet: micQuietShown } : null,
+    mics: micDevs.map(d => d.label + (micUsb(d) ? ' [usb]' : '')), micLost, ctx: ctx ? ctx.state : null,
     sync: { mode: sync.mode, lid: sync.lid, rate: sync.rate, off: sync.off, peers: sync.view ? sync.view.peers.length : 0, polls: sync.polls, errs: sync.errs.map(e => +e.toFixed(3)), log: sync.log.slice(-30) },
     ctxT: ctx ? ctx.currentTime : null, perfT: performance.now(),
     sr: ctx ? ctx.sampleRate : null, outLat: ctx ? ctx.outputLatency : null, tuner: tuner ? tuner.mode : null, tunerLat: tunerLatency,

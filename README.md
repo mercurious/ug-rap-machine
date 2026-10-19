@@ -47,6 +47,7 @@ Four artist lanes. Each one is a template in `STYLES`: tempo and swing ranges, s
 
 | Control | What it does |
 |---|---|
+| Mic | Which input the booth listens to. **Auto** takes a USB mic (Shure, Rode, Yeti, anything with "USB" in its name) when one is plugged in, otherwise the system default; picking one remembers it |
 | Lock to | Beat scale, pentatonic, chromatic, or tuner off |
 | Voice | Lowest pitch to track — Deep 65 Hz, Normal 80 Hz, High 120 Hz (lower = more latency) |
 | Retune speed | 0 ms is the hard, robotic snap; higher lets natural vibrato through |
@@ -54,6 +55,8 @@ Four artist lanes. Each one is a template in `STYLES`: tempo and swing ranges, s
 | Pitch | Transpose ±12 semitones, formants preserved |
 | Formant | Shift vocal character ±6 semitones without changing pitch |
 | Double / Dirt / Delay / Reverb | Stereo doubler, distortion, dotted-8th ping-pong delay, reverb |
+
+**USB mics.** Plug the mic in before or after the page opens. In auto, a USB mic that arrives while the mic is on takes over from the built-in one. Unplugging the mic turns it off instead of falling back to the built-in mic, which would feed back through the speakers; plug the same mic back in and it comes back on. If the mic sends pure silence for a few seconds, the booth asks whether it is muted, on the mic or in the system mixer (PipeWire can keep a USB mic muted between plug-ins). A mic with a headphone jack, like the MV7, often becomes the system's default output too, so the beat follows it to that jack.
 
 No mic? **Tune a vocal file…** runs an audio file through the same chain, starting on the next bar.
 
