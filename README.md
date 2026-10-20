@@ -156,3 +156,7 @@ Plug in headphones: through the speakers the internal mic feeds back into the tu
 **Beat engine** is a look-ahead scheduler (Web Worker timer, 120 ms horizon) driving synthesized voices: sine 808s with drive and glide, noise/tone drums, FM bells, detuned saw pads and a filtered square lead. Vocal chops are formant-synthesized vowels rendered offline and played as samples; the flip loop is a rendered choir that is then bit-crushed, sample-rate reduced, wobbled and given vinyl crackle.
 
 Everything lives in `underground-rap-machine.html` — no build step or dependencies. Fonts load from Google Fonts and fall back to system fonts offline. The Flip 2 bridge in `flip2/server.py` is standard-library Python.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
