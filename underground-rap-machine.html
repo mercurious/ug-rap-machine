@@ -73,10 +73,18 @@ button{cursor:pointer}
 .btn[aria-pressed="true"]{background:color-mix(in srgb,var(--acc) 22%,var(--panel-2));border-color:var(--acc)}
 .btn.play{width:66px;height:46px;font-size:18px;letter-spacing:0;display:grid;place-items:center}
 .btn.play[aria-pressed="true"]{background:var(--acc);color:var(--ink)}
-.btn.rec{display:flex;align-items:center;gap:8px;height:46px}
+/* minimized to its dot to make room for the tempo switch; the label is for screen readers */
+.btn.rec{display:flex;align-items:center;justify-content:center;height:46px;width:52px}
+.btn.rec span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .btn.rec i{width:12px;height:12px;border-radius:50%;background:var(--rec);box-shadow:0 0 0 2px rgba(255,74,74,.25)}
 .btn.rec[aria-pressed="true"]{background:var(--rec);border-color:var(--rec);color:#1a0303}
 .btn.rec[aria-pressed="true"] i{background:#1a0303;animation:blink 1s steps(2) infinite}
+.tg.tempo{gap:0}
+.btn.tmode{display:flex;align-items:baseline;gap:5px}
+.btn.tmode b{font:600 14px/1 var(--f-mono)}
+.btn.tmode:first-child{border-radius:7px 0 0 7px}
+.btn.tmode+.btn.tmode{border-radius:0 7px 7px 0;margin-left:-1px}
+.btn.tmode[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--ink)}
 @keyframes blink{50%{opacity:.2}}
 .seed{font:500 11px/1 var(--f-mono);color:var(--dim);letter-spacing:.08em}
 .num{width:66px;background:var(--screen);border:1px solid var(--line);border-radius:6px;padding:8px;font:500 16px/1 var(--f-mono);color:var(--acc-2);text-align:center}
@@ -197,7 +205,9 @@ input[type=range]:hover::-moz-range-thumb{background:var(--acc)}
 .flip .mc>.ph h2{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .flip .mc>.ph .booth-row{flex:none;flex-wrap:nowrap}
 .flip .mc>.ph select{width:150px;text-overflow:ellipsis}
-.flip .lyrics{max-height:300px;overflow:auto;gap:6px}
+.flip .panel[data-view="mc"]{grid-template-rows:auto auto minmax(0,1fr)}
+.flip .mc-body{min-height:0;height:100%}
+.flip .lyrics{max-height:100%;overflow:auto;gap:6px;position:relative;overscroll-behavior:contain}
 .flip .sec{padding:5px 8px;gap:2px}
 .flip .line{font-size:12px;padding:1px 5px}
 .flip .mc-title{font-size:16px}
@@ -277,22 +287,22 @@ html.flip{background:var(--ground)}
 .flip select{padding:7px 4px;font-size:12px}
 .flip .btn{padding:8px 10px;font-size:11px}
 .flip .btn.play{width:56px;height:40px}
-.flip .btn.rec{height:40px}
+.flip .btn.rec{height:40px;width:48px}
+/* parked on the handheld to make room for the tempo switch; fills stay on */
+.flip .tg.fills{display:none}
 .flip .lcd{font-size:16px;padding:8px 6px;min-width:62px}
 .flip .num{width:52px;padding:8px 2px;font-size:14px}
 .flip .fo{display:inline-block;padding:8px 10px;min-width:36px}
 .flip .views{display:flex;gap:6px;align-items:center}
 .flip .views .view{flex:0 0 auto;padding:9px 16px}
 .flip .vk{font:600 10px/1 var(--f-mono);color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:3px 5px}
-/* model speedo between the view buttons and the status chips, given whatever width is left; Wi-Fi sync and
-   the battery gauge sit bottom right on every view: at the end of the bottom row where the view has one
-   (see setView), otherwise pinned to the corner */
+/* battery gauge, Wi-Fi sync and model speedo between the view buttons and the status chips; the speedo
+   takes whatever width is left */
 .flip .sys{margin-left:auto;display:flex;gap:6px;align-items:center;font:600 10px/1 var(--f-mono);letter-spacing:.06em;color:var(--dim);min-width:0}
-.flip .machine{position:relative}
-.flip .machine>.sys{position:absolute;right:19px;bottom:17px;z-index:2}
+.flip .sys>*{flex-shrink:0}
 .flip .views>*{flex-shrink:0}
 .flip .views>.sys{flex-shrink:1}
-.flip .sys .llm{max-width:100%;overflow:hidden}
+.flip .sys .llm{flex-shrink:1;min-width:0;overflow:hidden}
 .flip .sys .llm>span{overflow:hidden;text-overflow:ellipsis}
 .flip .sys [hidden]{display:none!important}
 .flip .sys .chip{white-space:nowrap;display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid var(--line);border-radius:4px;height:21px;box-sizing:border-box}
@@ -349,7 +359,7 @@ html.flip{background:var(--ground)}
 .flip .flipname{max-width:200px;font-size:11px}
 /* booth */
 /* the pitch trace is the only row that gives; the sliders set the height of rows 3-4 and the two
-   control rows sit side by side along the bottom, the second one ending in the sync and battery chips */
+   control rows sit side by side along the bottom */
 .flip .panel[data-view="booth"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:6px 12px}
 .flip .panel[data-view="booth"]>.ph{grid-column:1/-1;grid-row:1}
 .flip #micDev{max-width:170px;padding:4px 6px;font-size:12px}
@@ -370,8 +380,8 @@ html.flip{background:var(--ground)}
 .flip input[type=range]::-webkit-slider-thumb{width:18px;height:22px;margin-top:-9px}
 .flip input[type=range]::-moz-range-thumb{width:18px;height:22px}
 /* pads */
-.flip .panel[data-view="pads"]{grid-template-rows:auto minmax(0,1fr);padding-bottom:35px}   /* room for the corner chips */
-.flip .panel[data-view="pattern"],.flip .panel[data-view="mc"]{align-content:start}
+.flip .panel[data-view="pads"]{grid-template-rows:auto minmax(0,1fr)}
+.flip .panel[data-view="pattern"]{align-content:start}
 .flip .pads{gap:8px;height:100%}
 .flip .pad-hit{aspect-ratio:auto;height:100%;min-height:110px;padding:10px 12px}
 .flip .pad-hit .k{font-size:16px;font-weight:700;color:var(--acc-2)}
@@ -437,11 +447,15 @@ html.flip{background:var(--ground)}
       <input id="swing" type="range" min="0" max="30" step="1" value="8" style="width:90px">
       <output id="swing-out">8%</output>
     </div>
-    <div class="tg">
+    <div class="tg tempo" role="group" aria-label="Tempo baseline">
+      <button class="btn tmode" data-tempo="down" aria-pressed="true" title="Downtempo: 120 BPM, and new beats and Gemma's songs are written around it"><b>120</b>down</button>
+      <button class="btn tmode" data-tempo="up" aria-pressed="false" title="Uptempo: 160 BPM, and new beats and Gemma's songs are written around it"><b>160</b>up</button>
+    </div>
+    <div class="tg fills">
       <button class="btn" id="fills" aria-pressed="true">Fills</button>
     </div>
     <div class="tg grow">
-      <button class="btn rec" id="rec" aria-pressed="false"><i></i><span>Record take</span></button>
+      <button class="btn rec" id="rec" aria-pressed="false" title="Record take (R)"><i></i><span>Record take</span></button>
     </div>
   </section>
 
@@ -454,6 +468,8 @@ html.flip{background:var(--ground)}
     <button class="btn view" data-view="mc" aria-pressed="false">MC</button>
     <span class="vk">R1</span>
     <span class="sys" id="sys" hidden aria-live="off">
+      <span class="chip bat" id="sys-bat" hidden title="Battery"><i class="bi"><b id="sys-fill"></b></i><svg class="bolt" id="sys-bolt" viewBox="0 0 8 12" aria-label="charging" hidden><path d="M5 0 0 7h3l-1 5 6-7H5z"/></svg><span id="sys-pct">—</span><small id="sys-w"></small></span>
+      <button class="chip syn" id="sys-sync" hidden title="Wi-Fi sync with HI5, Jaffedrone and fliptribe: tap for off, auto, lead, follow"><b id="sys-sync-d"></b><span id="sys-sync-t">sync</span></button>
       <span class="chip llm" id="sys-llm" hidden title="Gemma"><i class="throb" id="sys-throb" hidden><b></b><b></b><b></b></i><span id="sys-llm-t">gemma</span><i class="spd" id="sys-spd" hidden><b></b></i></span>
     </span>
     <span class="fstat"><b id="fs-scene">HOOK</b><i id="fs-mic">MIC</i><i id="fs-rec">REC</i><i id="fs-led">LED</i></span>
@@ -566,7 +582,7 @@ html.flip{background:var(--ground)}
         <div class="grp head"><span></span><span class="lbl">Level</span><span class="lbl">Overdrive</span></div>
       </div>
       <div class="ph"><h2>Takes</h2><span class="sub" id="recTime"></span></div>
-      <div class="takes" id="takes"><p class="empty">Hit <b>Record take</b> (or <kbd>R</kbd>) — it captures the beat, pads and your tuned vocal.</p></div>
+      <div class="takes" id="takes"><p class="empty">Hit the red record dot (or <kbd>R</kbd>) — it captures the beat, pads and your tuned vocal.</p></div>
     </section>
   </section>
 
@@ -600,10 +616,6 @@ html.flip{background:var(--ground)}
     <span><kbd>Space</kbd> play/stop · <kbd>G</kbd> generate · <kbd>N</kbd> next artist · <kbd>1</kbd>–<kbd>8</kbd> pads · <kbd>I</kbd> <kbd>V</kbd> <kbd>H</kbd> <kbd>B</kbd> scenes · hold <kbd>F</kbd> filter · <kbd>R</kbd> record · <kbd>M</kbd> mic</span>
     <span>Everything is synthesized in your browser — no samples are downloaded.</span>
   </footer>
-  <span class="sys" id="sys-low" hidden aria-live="off">
-    <button class="chip syn" id="sys-sync" hidden title="Wi-Fi sync with HI5, Jaffedrone and fliptribe: tap for off, auto, lead, follow"><b id="sys-sync-d"></b><span id="sys-sync-t">sync</span></button>
-    <span class="chip bat" id="sys-bat" hidden title="Battery"><i class="bi"><b id="sys-fill"></b></i><svg class="bolt" id="sys-bolt" viewBox="0 0 8 12" aria-label="charging" hidden><path d="M5 0 0 7h3l-1 5 6-7H5z"/></svg><span id="sys-pct">—</span><small id="sys-w"></small></span>
-  </span>
 </div>
 
 <script>
@@ -2481,8 +2493,23 @@ function bindRange(id, obj, key, fmt, onChange) {
 const pct = v => Math.round(v) + '%';
 const semi = v => (v > 0 ? '+' : '') + v + ' st';
 
+/* Two tempo baselines, one tap apart. The one the BPM is nearer to is lit; a lane switch lands on it, Generate
+   keeps the tempo as set, and Gemma writes within a few percent of it (see aiTempo). */
+const TEMPOS = { down: 120, up: 160 };
+const tempoMode = bpm => bpm >= (TEMPOS.down + TEMPOS.up) / 2 ? 'up' : 'down';
+function showTempo() {
+  $('#bpm').value = Math.round(song.bpm);
+  $$('.tmode').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tempo === tempoMode(song.bpm))));
+}
+function setTempo(bpm) {
+  const was = tempoMode(song.bpm);
+  song.bpm = clamp(Math.round(bpm), 60, 200); ai.anchor = song.bpm;
+  showTempo(); applySongAudio(); scheduleFlipRender();
+  // across the baselines a song already written for the other one is dropped and the next is asked for anew
+  if (ai.on && tempoMode(song.bpm) !== was) { ai.next = null; if (ai.loop) aiPrefetch(ai.gen); }
+}
 function applySongUI() {
-  $('#bpm').value = song.bpm;
+  showTempo();
   $('#key').value = song.root; $('#mode').value = song.mode;
   $('#swing').value = Math.round(song.swing * 100); $('#swing-out').textContent = Math.round(song.swing * 100) + '%';
   $('#fills').setAttribute('aria-pressed', String(song.fills));
@@ -2491,10 +2518,10 @@ function applySongUI() {
   renderLabels(); renderChords(); renderGrid();
 }
 function newSong(keepTempo) {
-  // Generate beat re-rolls the song but not the performer's tempo; a lane switch takes the lane's
+  // Generate beat re-rolls the song but not the performer's tempo; a lane switch goes to the baseline
   const bpm = song && song.bpm;
   song = generateSong(styleKey, randSeed());
-  if (keepTempo && bpm) song.bpm = bpm;
+  song.bpm = keepTempo && bpm ? bpm : TEMPOS[tempoMode(bpm || TEMPOS.down)];
   applySongUI(); pushTuner();
   if (ctx) { applySongAudio(); scheduleFlipRender(); }
 }
@@ -2519,7 +2546,8 @@ function initUI() {
   $('#gen').addEventListener('click', () => newSong(true));
   $('#play').addEventListener('click', togglePlay);
   $('#rec').addEventListener('click', toggleRec);
-  $('#bpm').addEventListener('change', () => { song.bpm = clamp(Math.round(+$('#bpm').value || song.bpm), 60, 200); $('#bpm').value = song.bpm; ai.anchor = song.bpm; applySongAudio(); scheduleFlipRender(); });
+  $('#bpm').addEventListener('change', () => setTempo(+$('#bpm').value || song.bpm));
+  $$('.tmode').forEach(b => b.addEventListener('click', () => setTempo(TEMPOS[b.dataset.tempo])));
   $('#key').addEventListener('change', () => { song.root = +$('#key').value; finalizeSong(song); renderChords(); pushTuner(); scheduleFlipRender(); });
   $('#mode').addEventListener('change', () => { song.mode = $('#mode').value; finalizeSong(song); renderChords(); pushTuner(); scheduleFlipRender(); });
   $('#swing').addEventListener('input', () => { song.swing = +$('#swing').value / 100; $('#swing-out').textContent = $('#swing').value + '%'; });
@@ -2590,7 +2618,7 @@ function initUI() {
   $('#vLoad').addEventListener('click', () => $('#vFile').click());
   $('#vFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadVocalFile(f); e.target.value = ''; });
   $('#vPlay').addEventListener('click', toggleVocalFile);
-  const bump = d => { song.bpm = clamp(Math.round(song.bpm) + d, 60, 200); $('#bpm').value = song.bpm; ai.anchor = song.bpm; applySongAudio(); scheduleFlipRender(); };
+  const bump = d => setTempo(Math.round(song.bpm) + d);
   for (const [id, d] of [['#bpmDn', -1], ['#bpmUp', 1]]) {
     let rep = 0;
     const stop = () => { clearInterval(rep); rep = 0; };
@@ -2634,9 +2662,6 @@ function setView(v) {
   $$('.panel[data-view]').forEach(e => { e.hidden = FLIP && e.dataset.view !== v; });
   $$('.view').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
   if (v === 'pattern') fitGrid();
-  // the sync and battery chips end the view's bottom row where it has room for them, else sit in the corner
-  const slot = { pattern: '.under', booth: '.panel[data-view="booth"]>.file-line' }[v];
-  if (FLIP) (slot ? $(slot) : $('.machine')).append($('#sys-low'));
 }
 function stepView(d) { if (FLIP) setView(VIEWS[(VIEWS.indexOf(view) + d + VIEWS.length) % VIEWS.length]); }
 
@@ -2702,7 +2727,7 @@ function syncFollow(L, t) {
   if (!L) { if (sync.lid) { sync.lid = 0; sync.was = null; sync.errs = []; sync.rate = 1; sync.drift = 0; sync.off = null; } return; }
   if (L.id !== sync.lid) { sync.lid = L.id; sync.was = null; sync.errs = []; sync.rate = 1; sync.drift = 0; }
   if (Math.abs(L.bpm - song.bpm) > 0.01 && L.bpm >= 40 && L.bpm <= 250) {
-    song.bpm = Math.round(L.bpm * 100) / 100; $('#bpm').value = Math.round(song.bpm); ai.anchor = song.bpm;
+    song.bpm = Math.round(L.bpm * 100) / 100; showTempo(); ai.anchor = song.bpm;
     applySongAudio(); scheduleFlipRender();
   }
   // the bridge stamps the leader's position on the wall clock this page shares with it: the answer may be read
@@ -2743,13 +2768,13 @@ function syncShow() {
   $('#sys-sync-t').textContent = txt;
   c.classList.toggle('lead', lead); c.classList.toggle('follow', follow);
   c.title = `Wi-Fi sync (UDP 5150, HI5S): ${sync.mode}` + (n ? ` · ${n} peer${n > 1 ? 's' : ''}: ` + v.peers.map(p => `${p.ip} ${p.role} ${p.bpm} BPM${p.playing ? ' ▶' : ''}`).join(', ') : ' · nobody else on the network') + ' · tap to change';
-  $('#sys-low').hidden = false;
+  $('#sys').hidden = false;
 }
-/* Gemma speedo in the views row and battery gauge in the corner, fed by GET /sys on the bridge */
+/* battery gauge and Gemma speedo in the views row, fed by GET /sys on the bridge */
 const SYS_DEMO = (location.search.match(/[?&]sysdemo=(\w+)/) || [])[1];   // &sysdemo=writing|prompt|tts|low renders a sample state
 async function sysTick() {
   let d;
-  try { d = await (await fetch('/sys', { cache: 'no-store' })).json(); } catch (e) { $('#sys').hidden = true; $('#sys-low').hidden = $('#sys-sync').hidden; return; }
+  try { d = await (await fetch('/sys', { cache: 'no-store' })).json(); } catch (e) { $('#sys').hidden = $('#sys-sync').hidden; return; }
   if (SYS_DEMO) {
     d.bat = { pct: SYS_DEMO === 'low' ? 9 : 63, status: SYS_DEMO === 'low' ? 'Discharging' : 'Charging', w: 4.2 };
     d.llm = true; d.ai = { prompt: { phase: 'prompt' }, writing: { phase: 'writing', tokens: 212, secs: 48, tps: 4.4 } }[SYS_DEMO] || { phase: 'done', tokens: 343, secs: 68 };
@@ -2779,8 +2804,7 @@ async function sysTick() {
     L.classList.toggle('busy', busy);
     L.title = ph === 'writing' ? `Gemma is writing: ${d.ai.tokens} tokens in ${Math.round(d.ai.secs)} s` : ph === 'prompt' ? 'Gemma is reading the beat' : tts.busy ? 'Pocket TTS is singing' : 'Gemma';
   }
-  $('#sys').hidden = L.hidden;
-  $('#sys-low').hidden = B.hidden && $('#sys-sync').hidden;
+  $('#sys').hidden = B.hidden && L.hidden && $('#sys-sync').hidden;
 }
 const ledMul = (c, k) => c.map(x => Math.round(clamp(x * k, 0, 255)));
 /* The right ring follows Gemma's voice. Each line's loudness (10 ms frames) and syllable onsets are measured
@@ -2956,7 +2980,7 @@ function aiSummary() {
 // plan stays within a few percent of it, whatever the lane's usual range. Downtempo stays downtempo.
 function aiTempo() {
   const a = ai.anchor || song.bpm, m = Math.max(4, Math.round(a * 0.05));
-  return { anchor: a, lo: Math.max(60, a - m), hi: Math.min(200, a + m) };
+  return { anchor: a, lo: Math.max(60, a - m), hi: Math.min(200, a + m), feel: tempoMode(a) === 'up' ? 'uptempo' : 'downtempo' };
 }
 async function aiRequestPlan(gen) {
   // the model writes for a minute or two, too long to hold one request open: the bridge starts a job,
@@ -3210,8 +3234,13 @@ function aiApply(plan) {
   if (voc.scale === 'off') { voc.scale = 'beat'; $('#v-scale').value = 'beat'; pushTuner(); $('#lockName').textContent = lockLabel(); }
   ai.titles.push(plan.title); if (ai.titles.length > 8) ai.titles.shift();
 }
+// the sheet scrolls with the singer: the line being sung sits a third of the way down (the sheet is its offsetParent)
+function lyricFollow(d) {
+  const box = $('#aiLyrics');
+  if (box.scrollHeight > box.clientHeight) box.scrollTo({ top: Math.max(0, d.offsetTop - box.clientHeight / 3), behavior: 'smooth' });
+}
 function renderPlan(plan) {
-  const box = $('#aiLyrics'); box.innerHTML = ''; ai.lineEls = []; ai.secEls = [];
+  const box = $('#aiLyrics'); box.innerHTML = ''; box.scrollTop = 0; ai.lineEls = []; ai.secEls = [];
   plan.sections.forEach((s, si) => {
     const sec = el('div', 'sec'); ai.secEls.push(sec);
     const sh = el('div', 'sh'), nm = el('b', '', { text: s.scene });
@@ -3311,7 +3340,7 @@ function aiTick() {
       // a line with a pickup starts under the previous line's tail: the tuner follows whichever line began last
       const tok = ++ai.tok, forced = tuner && voc.scale !== 'off', note = d => forced && tuner.post({ keys: degMask(d) });
       later(() => { ai.lineOn = tok; if (e.mel.length) note(e.mel[0]);
-                    const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { $$('.line.now').forEach(x => { x.classList.remove('now'); x.classList.add('sung'); }); d.classList.add('now'); } }, wait);
+                    const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { $$('.line.now').forEach(x => { x.classList.remove('now'); x.classList.add('sung'); }); d.classList.add('now'); lyricFollow(d); } }, wait);
       e.mel.forEach((d, j) => j && later(() => { if (ai.lineOn === tok) note(d); }, Math.max(0, (e.t + e.times[j] - ctx.currentTime) * 1000)));
       later(() => { if (ai.lineOn === tok) { ai.lineOn = 0; pushTuner(); }
                     const d = ai.lineEls[e.si] && ai.lineEls[e.si][e.li]; if (d) { d.classList.remove('now'); d.classList.add('sung'); } }, wait + e.dur * 1000 + 40);
@@ -3329,12 +3358,16 @@ function aiEnd(at) {
 }
 async function aiPrefetch(gen) {
   if (ai.nextBusy) return; ai.nextBusy = true;
+  const mode = tempoMode(aiTempo().anchor), moved = () => tempoMode(aiTempo().anchor) !== mode;
+  let again = false;
   try {
     const plan = await aiRequestPlan(gen); if (!plan || gen !== ai.gen) return;
+    if (moved()) { again = true; return; }   // the performer switched baseline while Gemma wrote it
     await aiSynth(plan, gen, (i, n) => aiSay(`Pocket TTS is singing the next one… ${i + 1}/${n}`)); if (gen !== ai.gen) return;
+    if (moved()) { again = true; return; }
     ai.next = plan; aiSay(`next up: “${plan.title}”`);
   } catch (e) { if (gen === ai.gen) aiSay('next plan failed: ' + e.message, true); }
-  finally { ai.nextBusy = false; }
+  finally { ai.nextBusy = false; if (again && gen === ai.gen) aiPrefetch(gen); }
 }
 async function aiStart() {
   await ensureAudio(); if (ctx.state !== 'running') await ctx.resume();

@@ -372,6 +372,13 @@ SING = {
     "all": "Singing: sing every section (sung true everywhere), short lines with few syllables, like a ballad.\n",
     "off": "Singing: none; rap every section (sung false everywhere).\n",
 }
+# the performer's tempo baseline (one tap on the page): the song is written for it, not just played at it
+FEEL = {
+    "uptempo": "Feel: uptempo, around 160 BPM. A bar goes by in 1.5 s, so keep lines short and punchy (6-9 syllables), "
+               "with hype, quick-fire energy and chants that land on the beat.\n",
+    "downtempo": "Feel: downtempo, around 120 BPM. Lines have room to breathe: laid-back flows, longer lines (8-12 "
+                 "syllables), moodier and more melodic.\n",
+}
 
 
 class AIBridge:
@@ -472,7 +479,8 @@ class AIBridge:
             f"chords {' | '.join(st.get('chords') or [])}, swing {st.get('swing')}%, scene {st.get('scene')}. "
             f"Steps on per row: {st.get('density')}.\n"
             f"Tempo zone: {lo}-{hi} BPM, set by the performer around {anchor}; bpm must stay inside it.\n"
-            f"Vocal syncopation {sync_pct}%: "
+            + FEEL.get(tempo.get("feel"), "")
+            + f"Vocal syncopation {sync_pct}%: "
             + ("every line lands square on the downbeat, so write even lines of the same length.\n" if sync_pct < 20 else
                "lines come in on pickups and behind the beat; mix short punchy lines with longer ones and start some on a one-word pickup.\n" if sync_pct >= 60 else
                "some lines come in on a pickup or behind the beat; vary the line lengths a little.\n")
