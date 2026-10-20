@@ -132,7 +132,7 @@ Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5"
 | Right stick + R2 | Pointer and tap |
 | Guide (Home) | Leave |
 
-**Gauges.** Between the view buttons and the status chips sit a battery gauge (fill, percentage, a bolt while charging, the watts going in or out), the sync chip and a Gemma speedo, which takes whatever width the row has left: pulsing dots while the model reads the beat or Pocket TTS sings, a bar and tokens per second while it writes, the last speed when idle. Battery and speedo come from `GET /sys` on the bridge every two seconds.
+**Gauges.** Between the view buttons and the status chips sit a battery gauge (fill, percentage, a bolt while charging, the watts going in or out) stacked on the sync chip, and a Gemma speedo two lines tall that gives way if the row runs short: under its label, pulsing dots while the model reads the beat or Pocket TTS sings, a bar and tokens per second while it writes, the last speed when idle. `&sysdemo=writing|prompt|tts|low` renders sample states, with the widest sync chip, to check the fit. Battery and speedo come from `GET /sys` on the bridge every two seconds.
 
 **MC lyrics.** The lyric sheet fills the panel and scrolls with Gemma: the line being sung stays a third of the way down.
 
