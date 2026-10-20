@@ -58,6 +58,8 @@ Four artist lanes. Each one is a template in `STYLES`: tempo and swing ranges, s
 
 **USB mics.** Plug the mic in before or after the page opens. In auto, a USB mic that arrives while the mic is on takes over from the built-in one. Unplugging the mic turns it off instead of falling back to the built-in mic, which would feed back through the speakers; plug the same mic back in and it comes back on. If the mic sends pure silence for a few seconds, the booth asks whether it is muted, on the mic or in the system mixer (PipeWire can keep a USB mic muted between plug-ins). A mic with a headphone jack, like the MV7, often becomes the system's default output too, so the beat follows it to that jack.
 
+**USB headphones.** On the Flip 2, plugging in USB headphones (Apple's USB-C EarPods, a USB-C dongle, a mic with a headphone jack) moves the sound to them: Firefox there can't pick an output itself, so the bridge makes them PipeWire's default output while they are plugged in, and puts back the output it replaced when they are unplugged or the app exits. The booth says where the beat plays. Unplugging them while the mic is on turns Monitor off, so the mic doesn't feed back through the speakers, and plugging them back in turns it on again. The EarPods' inline mic counts as a USB mic, so auto picks it. Elsewhere the operating system already moves the sound to headphones you plug in. If the Flip 2 doesn't see a USB device at all after it has been charging, plug a charger in and out once (its Type-C controller can miss the power going away).
+
 No mic? **Tune a vocal file…** runs an audio file through the same chain, starting on the next bar.
 
 **Pads.** Eight built-in sounds (riser, reverse crash, boom, tape stop, laser, sparkle, vox hit, 808 dive) on keys 1–8. Tape stop winds the song down and stops it; when Gemma plays it, the beat drops back in on the next bar instead. Drop an audio file on a pad to replace it, or press ● to record 2 seconds of your tuned vocal as an ad-lib.
@@ -132,7 +134,7 @@ Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5"
 | Right stick + R2 | Pointer and tap |
 | Guide (Home) | Leave |
 
-**Gauges.** Between the view buttons and the status chips sit a battery gauge (fill, percentage, a bolt while charging, the watts going in or out) stacked on the sync chip, and a Gemma speedo two lines tall that gives way if the row runs short: under its label, pulsing dots while the model reads the beat or Pocket TTS sings, a bar and tokens per second while it writes, the last speed when idle. `&sysdemo=writing|prompt|tts|low` renders sample states, with the widest sync chip, to check the fit. Battery and speedo come from `GET /sys` on the bridge every two seconds.
+**Gauges.** Between the view buttons and the status chips sit a battery gauge (fill, percentage, a bolt while charging, the watts going in or out) stacked on the sync chip, and a Gemma speedo two lines tall that gives way if the row runs short: under its label, pulsing dots while the model reads the beat or Pocket TTS sings, a bar and tokens per second while it writes, the last speed when idle. `&sysdemo=writing|prompt|tts|low` renders sample states, with the widest sync chip, to check the fit. Battery and speedo come from `GET /sys` on the bridge every two seconds, along with the default audio output (for the headphone notices).
 
 **MC lyrics.** The lyric sheet fills the panel and scrolls with Gemma: the line being sung stays a third of the way down.
 

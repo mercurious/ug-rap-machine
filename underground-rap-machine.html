@@ -1993,7 +1993,7 @@ function boothMsg(t) { $('#boothMsg').textContent = t || ''; }
    through the speakers; plugging the same mic back in turns it on again. */
 const MIC_KEY = 'urm.mic', MIC_BASE = { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 };
 // Chrome appends the USB vendor:product id ("Shure MV7 (14ed:1012)"); Firefox shows the PipeWire or CoreAudio name
-const USB_MIC = /\busb\b|\([0-9a-f]{4}:[0-9a-f]{4}\)|shure|rode|yeti|snowball|samson|audio-technica|at20[0-9]{2}|hyperx|elgato|fifine|razer|focusrite|scarlett|tascam|behringer|presonus|maono|tonor/i;
+const USB_MIC = /\busb\b|earpods|\([0-9a-f]{4}:[0-9a-f]{4}\)|shure|rode|yeti|snowball|samson|audio-technica|at20[0-9]{2}|hyperx|elgato|fifine|razer|focusrite|scarlett|tascam|behringer|presonus|maono|tonor/i;
 let micPref = { id: '', label: '' }, micDevs = [], micLost = '', micBusy = false;
 let micAn = null, micBuf = null, micWatch = 0, micQuietSince = 0, micQuietShown = false;
 try { micPref = { ...micPref, ...JSON.parse(localStorage.getItem(MIC_KEY) || '{}') }; } catch (e) {}
@@ -2093,6 +2093,26 @@ async function onMicDevices() {
     if (!d || micBusy || !ctx) return;
     micLost = ''; micBusy = true;
     try { await startMic(); boothMsg(`${d.label} is back, mic on.`); } catch (e) { micErr(e); } finally { micBusy = false; }
+  }
+}
+/* ---------- USB headphones ----------
+   On the handheld the bridge makes USB headphones the default output while they are plugged in, and GET /sys says
+   what plays (.out). Unplugging them puts the beat back on the speakers, where the monitor would feed a live mic
+   back into itself: it goes off, and comes back on with the headphones. */
+let outDev = null, monAuto = false;
+function setMonitor(on) { voc.monitor = on; $('#monitor').setAttribute('aria-pressed', String(on)); applyVocal(); }
+function onOutput(o) {
+  const was = outDev; outDev = o;
+  if (!o || (was && o.usb === was.usb && o.name === was.name)) return;
+  if (o.usb) {
+    if (monAuto && micStream && !voc.monitor) setMonitor(true);
+    monAuto = false;
+    boothMsg(`Headphones: ${o.name}. The beat${micStream && voc.monitor ? ' and your monitor play' : ' plays'} there.`);
+  } else if (was && was.usb) {
+    const off = micStream && voc.monitor;
+    if (off) { setMonitor(false); monAuto = true; }
+    boothMsg((micLost ? $('#boothMsg').textContent + ' ' : '') + `${was.name} unplugged, the beat is back on ${/speaker/i.test(o.name) ? 'the speakers' : o.name}.`
+      + (off ? ' Monitor is off so the mic doesn’t feed back; press Monitor to hear yourself.' : ''));
   }
 }
 // a live mic is never exactly zero; a run of digital silence means it's muted on the mic or in the system mixer
@@ -2588,7 +2608,7 @@ function initUI() {
     listMics();
     navigator.mediaDevices.addEventListener('devicechange', onMicDevices);
   }
-  $('#monitor').addEventListener('click', () => { voc.monitor = !voc.monitor; $('#monitor').setAttribute('aria-pressed', String(voc.monitor)); applyVocal(); });
+  $('#monitor').addEventListener('click', () => { monAuto = false; setMonitor(!voc.monitor); });
   $('#v-scale').addEventListener('change', () => { voc.scale = $('#v-scale').value; pushTuner(); $('#lockName').textContent = lockLabel(); });
   $('#v-range').addEventListener('change', () => { voc.range = +$('#v-range').value; pushTuner(); });
   bindRange('v-retune', voc, 'retune', v => v === 0 ? 'hard' : v + ' ms', pushTuner);
@@ -2787,6 +2807,7 @@ async function sysTick() {
     d.llm = true; d.ai = { prompt: { phase: 'prompt' }, writing: { phase: 'writing', tokens: 212, secs: 48, tps: 4.4 } }[SYS_DEMO] || { phase: 'done', tokens: 343, secs: 68 };
     d.tts = SYS_DEMO === 'tts' ? { busy: 1, x: 2.6 } : { busy: 0, x: 2.6 };
   }
+  onOutput(d.out);
   const bat = d.bat, B = $('#sys-bat');
   B.hidden = !(bat && bat.pct != null);
   if (!B.hidden) {
@@ -2917,7 +2938,7 @@ function postStatus() {
   const pc = $('#pitch'), r = pc.getBoundingClientRect();
   const st = { t: Date.now(), playing, style: styleKey, bpm: song.bpm, seed: song.seed, scene, view, mic: !!micStream,
     micDev: micTrack() ? { label: micTrack().label, set: micTrack().getSettings(), pref: micPref.label || 'auto', quiet: micQuietShown } : null,
-    mics: micDevs.map(d => d.label + (micUsb(d) ? ' [usb]' : '')), micLost, ctx: ctx ? ctx.state : null,
+    mics: micDevs.map(d => d.label + (micUsb(d) ? ' [usb]' : '')), micLost, out: outDev, monitor: voc.monitor, ctx: ctx ? ctx.state : null,
     sync: { mode: sync.mode, lid: sync.lid, rate: sync.rate, off: sync.off, peers: sync.view ? sync.view.peers.length : 0, polls: sync.polls, errs: sync.errs.map(e => +e.toFixed(3)), log: sync.log.slice(-30) },
     ctxT: ctx ? ctx.currentTime : null, perfT: performance.now(),
     sr: ctx ? ctx.sampleRate : null, outLat: ctx ? ctx.outputLatency : null, tuner: tuner ? tuner.mode : null, tunerLat: tunerLatency,

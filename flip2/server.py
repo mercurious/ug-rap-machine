@@ -22,7 +22,9 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
                                                              number, GET /ai/progress follows it, GET /ai/plan?job=N
                                                              fetches the result; POST /ai/tts sings a line; GET
                                                              /ai/health reports the servers;
-  GET /sys                                                   battery and model activity for the page gauges
+  GET /sys                                                   battery, the default audio output and model activity
+                                                             for the page gauges. USB headphones become the default
+                                                             output while plugged in (see Headphones)
   POST /link    the page, once a bar: tempo, key, mode, the chord loop, which bar and when its downbeat is heard;
                 GET /link returns it. The bridge beacons it on the LAN (UDP broadcast, --link-port, default
                 47800, 0 = off) four times a second, with the next downbeat as "nextBarIn" milliseconds from the
@@ -35,7 +37,7 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
 
 The rings are restored to what they showed before when the server exits.
 """
-import argparse, json, math, os, random, signal, socket, sqlite3, struct, sys, threading, time, urllib.error, urllib.request
+import argparse, json, math, os, random, re, signal, socket, sqlite3, struct, subprocess, sys, threading, time, urllib.error, urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 LED_ROOT = "/sys/class/leds"
@@ -111,6 +113,78 @@ class State:
         self.status = {}
         self.link, self.link_t = None, 0.0   # the page's last bar report and when it came
         self.sync = None                     # the HI5S peer, when it runs
+        self.phones = Headphones()
+
+
+class Headphones:
+    """USB headphones take the sound while they are plugged in. Firefox here has no AudioContext.setSinkId, but its
+    output follows PipeWire's default sink, so when a USB output arrives the bridge makes it the default, and when it
+    leaves (or the bridge exits) puts back the default it replaced. A default someone picks by hand meanwhile is left
+    alone. Needs pactl (pipewire-pulse); without it this does nothing."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.out = None      # the default output for GET /sys: {"name", "usb"}
+        self.ours = None     # the USB sink the bridge made the default
+        self.prev = None     # the default it replaced
+        self.seen = set()
+        self.env = dict(os.environ)
+        if not self.env.get("XDG_RUNTIME_DIR"):   # started from ssh: find the session's pulse socket
+            for d in (f"/run/user/{os.getuid()}", "/var/run/0-runtime-dir"):
+                if os.path.exists(os.path.join(d, "pulse", "native")):
+                    self.env["XDG_RUNTIME_DIR"] = d
+                    break
+
+    def _pactl(self, *args):
+        return subprocess.run(["pactl", *args], env=self.env, capture_output=True, text=True, timeout=5).stdout
+
+    def check(self):
+        with self.lock:
+            sinks = json.loads(self._pactl("-f", "json", "list", "sinks") or "[]")
+            default = self._pactl("get-default-sink").strip()
+            names = {s["name"] for s in sinks}
+            usb = [s["name"] for s in sinks if (s.get("properties") or {}).get("device.bus") == "usb"]
+            new = [n for n in usb if n not in self.seen]
+            self.seen = set(usb)
+            if self.ours and self.ours in names and default != self.ours:
+                self.ours = self.prev = None          # picked another output by hand: not ours any more
+            if new and default not in usb:
+                self.prev, self.ours = self.prev or default, new[-1]
+                self._pactl("set-default-sink", self.ours)
+                default = self.ours
+                print(f"headphones: {self.ours} plugged in, now the default output (was {self.prev})", flush=True)
+            elif self.ours and self.ours not in names:
+                if self.prev in names:
+                    self._pactl("set-default-sink", self.prev)
+                    default = self.prev
+                print(f"headphones: {self.ours} unplugged, default output back to {default}", flush=True)
+                self.ours = self.prev = None
+            desc = next((s.get("description") or s["name"] for s in sinks if s["name"] == default), default)
+            self.out = {"name": desc, "usb": default in usb} if default else None
+
+    def run(self):
+        while True:
+            try:
+                self.check()
+                p = subprocess.Popen(["pactl", "subscribe"], env=self.env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+                for line in p.stdout:
+                    if re.search(r"'(new|remove)' on sink #|on server", line):
+                        self.check()
+                p.wait()
+            except FileNotFoundError:
+                return                                # no pactl: not a PipeWire box
+            except (OSError, ValueError, subprocess.SubprocessError) as e:
+                print(f"headphones: {e}", flush=True)
+            time.sleep(2)                             # PipeWire restarted: subscribe again
+
+    def restore(self):
+        with self.lock:
+            try:
+                if self.ours and self._pactl("get-default-sink").strip() == self.ours:
+                    self._pactl("set-default-sink", self.prev)
+                    print(f"headphones: default output back to {self.prev}", flush=True)
+            except (OSError, subprocess.SubprocessError):
+                pass
 
 
 def beacon(state, port):
@@ -181,7 +255,6 @@ class Sync:
         if time.time() - self.bcast_t > 5:
             self.bcast_t, out = time.time(), []
             try:
-                import subprocess
                 txt = subprocess.run(["ip", "-4", "-o", "addr", "show"], capture_output=True, text=True, timeout=2).stdout
                 for line in txt.splitlines():
                     w = line.split()
@@ -646,7 +719,7 @@ def make_handler(state, directory):
                 if prog.get("phase") == "writing" and prog.get("secs"):
                     prog["tps"] = round(prog["tokens"] / prog["secs"], 1)
                 prog.pop("t0", None)
-                return self._json(200, {"bat": battery(), "llm": bool(state.ai.llm), "ai": prog, "tts": tts})
+                return self._json(200, {"bat": battery(), "out": state.phones.out, "llm": bool(state.ai.llm), "ai": prog, "tts": tts})
             if path == "/cmd":
                 wait = 20.0
                 if "wait=" in self.path:
@@ -717,6 +790,7 @@ def make_handler(state, directory):
 
 def serve(port, directory, ai, link_port=47800, sync_port=5150, sync_mode="auto"):
     state = State(ai)
+    threading.Thread(target=state.phones.run, daemon=True).start()
     if link_port:
         threading.Thread(target=beacon, args=(state, link_port), daemon=True).start()
     if sync_port:
@@ -742,6 +816,7 @@ def serve(port, directory, ai, link_port=47800, sync_port=5150, sync_mode="auto"
         srv.serve_forever()
     finally:
         state.rings.restore()
+        state.phones.restore()
         print("rings restored", flush=True)
 
 
