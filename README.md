@@ -104,7 +104,7 @@ Timing on the Flip 2 with E4B: about 90–150 s to write a plan of ten lines, th
 python3 flip2/server.py --dir . --llm http://127.0.0.1:8096 --tts http://127.0.0.1:8097
 ```
 
-then <http://127.0.0.1:8766/underground-rap-machine.html?mc>. Point `--llm` at any llama-server with a Gemma (or another instruction model) and `--tts` at a `tts-server` from the same kit; the page talks to the bridge only.
+then <http://127.0.0.1:8766/underground-rap-machine.html?mc>. Point `--llm` at any llama-server with a Gemma (or another instruction model) and `--tts` at a `tts-server` from the same kit; the page talks to the bridge only. Any other OpenAI-compatible server works too, Ollama or a shared GPU box: give its base URL (with or without `/v1`) and name the model with `--llm-model`, e.g. `--llm http://HOST:11434/v1 --llm-model gemma4:e4b`. Thinking is turned off either way.
 
 ## Retroid Pocket Flip 2
 

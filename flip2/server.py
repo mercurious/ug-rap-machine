@@ -22,6 +22,10 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
                                                              number, GET /ai/progress follows it, GET /ai/plan?job=N
                                                              fetches the result; POST /ai/tts sings a line; GET
                                                              /ai/health reports the servers;
+  server.py --llm http://HOST:11434/v1 --llm-model gemma4:e4b
+                                                             any other OpenAI-compatible server (Ollama, a shared
+                                                             GPU box): name the model it should run. A base URL
+                                                             ending in /v1 is taken either way
   GET /sys                                                   battery, the default audio output and model activity
                                                              for the page gauges. USB headphones become the default
                                                              output while plugged in (see Headphones)
@@ -455,8 +459,11 @@ FEEL = {
 
 
 class AIBridge:
-    def __init__(self, llm, tts, voice):
+    def __init__(self, llm, tts, voice, model=None):
         self.llm, self.tts, self.voice = llm.rstrip("/") if llm else None, tts.rstrip("/") if tts else None, voice
+        if self.llm and self.llm.endswith("/v1"):
+            self.llm = self.llm[:-3]
+        self.model = model   # sent with every request; llama-server serves one model and needs none
         self.progress = {"phase": "idle"}
         self.tts_state = {"busy": 0, "x": None}   # how many lines are being sung, last audio-seconds per wall-second
         self.lock = threading.Lock()
@@ -510,9 +517,17 @@ class AIBridge:
                 out["llmStatus"] = h.get("status")
             except urllib.error.HTTPError as e:
                 out["llmStatus"] = "loading" if e.code == 503 else f"http {e.code}"
+                if e.code == 404:   # not llama-server (Ollama, a proxy): up if it lists its models
+                    try:
+                        self._get(self.llm + "/v1/models")
+                        out["llm"], out["llmStatus"] = True, "ok"
+                    except Exception:  # noqa: BLE001
+                        pass
             except Exception:  # noqa: BLE001
                 out["llmStatus"] = "down"
-            if out["llm"]:
+            if out["llm"] and self.model:
+                out["model"] = self.model
+            elif out["llm"]:
                 try:
                     m = self._get(self.llm + "/v1/models")
                     out["model"] = os.path.basename((m.get("data") or [{}])[0].get("id", "")) or None
@@ -567,8 +582,10 @@ class AIBridge:
             "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}],
             "stream": True, "temperature": 0.9, "top_p": 0.95, "max_tokens": 1400,
             "response_format": {"type": "json_schema", "json_schema": {"name": "plan", "schema": PLAN_SCHEMA}},
-            "chat_template_kwargs": {"enable_thinking": False},
+            "chat_template_kwargs": {"enable_thinking": False}, "reasoning_effort": "none",
         }
+        if self.model:
+            body["model"] = self.model
         t0 = time.time()
         with self.lock:
             self.progress = {"phase": "prompt", "tokens": 0, "t0": t0, "job": job}
@@ -880,6 +897,7 @@ def main():
     ap.add_argument("--status", action="store_true", help="print the page's last heartbeat")
     ap.add_argument("--grant-mic", action="store_true", help="allow the mic for this origin in the house Firefox profile")
     ap.add_argument("--llm", default=os.environ.get("URM_LLM"), help="llama-server base URL for the MC mode")
+    ap.add_argument("--llm-model", default=os.environ.get("URM_LLM_MODEL"), help="model to ask for, for a server that hosts several (Ollama)")
     ap.add_argument("--tts", default=os.environ.get("URM_TTS"), help="tts-server (Pocket TTS) base URL for the MC mode")
     ap.add_argument("--voice", default=os.environ.get("URM_VOICE", "alba"), help="default Pocket TTS voice")
     ap.add_argument("--link-port", type=int, default=int(os.environ.get("URM_LINK_PORT", "47800")),
@@ -904,7 +922,7 @@ def main():
         return print(send(a.port, "/cmd", cmd))
     if a.status:
         return print(json.dumps(send(a.port, "/status"), indent=1))
-    serve(a.port, a.dir, AIBridge(a.llm, a.tts, a.voice), a.link_port, a.sync_port, a.sync)
+    serve(a.port, a.dir, AIBridge(a.llm, a.tts, a.voice, a.llm_model), a.link_port, a.sync_port, a.sync)
 
 
 if __name__ == "__main__":
