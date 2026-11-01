@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Underground Rap Machine</title>
-<script>if(/[?&]flip\b/.test(location.search)){var d=document.documentElement;d.className='flip';d.style.zoom=(innerWidth/960).toFixed(3);}</script>
+<script>(function(){var q=location.search,d=document.documentElement;
+if(/[?&]flip\b/.test(q)){d.className='flip';d.style.zoom=(innerWidth/960).toFixed(3);}
+else if(/[?&]phone\b/.test(q)||(!/[?&]desktop\b/.test(q)&&matchMedia('(pointer:coarse)').matches&&Math.min(innerWidth,innerHeight)<=700)){d.className='phone';document.querySelector('meta[name=viewport]').setAttribute('content','width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=UnifrakturMaguntia&display=swap">
@@ -404,6 +406,118 @@ html.flip{background:var(--ground)}
 .flip .btn.gmute{padding:6px 4px;font-size:10px}
 .flip .takes{max-height:290px;overflow:auto}
 
+/* ---------- iPhone (?phone, or any narrow touchscreen): one view at a time, tabs along the bottom, the transport above them ---------- */
+html.phone{height:100%;background:var(--ground)}
+.phone body{height:100%;overflow:hidden;position:fixed;inset:0;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+.phone input,.phone textarea{-webkit-user-select:text;user-select:text}
+.phone button,.phone .cell,.phone canvas,.phone select,.phone input[type=range]{touch-action:manipulation}
+.phone .machine{height:100%;max-width:none;padding:calc(env(safe-area-inset-top) + 4px) 10px calc(env(safe-area-inset-bottom) + 2px);gap:8px;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;overflow:hidden}
+.phone .deck,.phone .lower,.phone .mc-row{display:contents}
+.phone .model,.phone .hint,.phone footer,.phone .seed,.phone .vk,.phone .fstat,.phone .sys,.phone #micDev,.phone .pad-hit .k{display:none}
+/* header: the logo, the four lanes, a thin spectrum */
+.phone .top{grid-row:1;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center}
+.phone .logo{font-size:24px;filter:none}
+.phone .styles{gap:5px;flex-wrap:nowrap}
+.phone .style-btn{flex:1 1 0;min-width:0;padding:9px 3px;border-radius:8px;gap:0;text-align:center}
+.phone .style-btn b{display:block;font-size:9px;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone .style-btn span{display:none}
+.phone .scope{grid-column:1/-1;height:22px;border-radius:6px}
+/* one panel at a time; it scrolls if it must */
+.phone .panel{grid-row:2;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px;gap:10px;align-content:start}
+.phone .ph h2{font-size:12px}
+/* transport: play, generate, the tempo switch and record; the song settings sit on the Pattern view (see initPhone) */
+.phone .transport{grid-row:3;flex-wrap:nowrap;padding:6px;gap:6px;align-items:stretch}
+.phone .tg{border-right:0;padding:0;min-height:0;gap:6px}
+.phone .tg.grow{flex:0 0 auto;margin-left:auto}
+.phone .btn{padding:10px;font-size:12px}
+.phone .btn.play{width:54px;height:46px;font-size:20px}
+.phone .lcd{min-width:56px;height:46px;padding:0 6px;font-size:14px;display:grid;place-items:center}
+.phone #gen{height:46px;padding:0 10px}
+.phone .btn.tmode{height:46px;padding:0 9px}
+.phone .btn.tmode span{display:none}
+.phone .btn.rec{height:46px;width:46px}
+.phone .views{grid-row:4;display:flex;gap:4px}
+.phone .views .view{flex:1 1 0;padding:12px 0;font-size:12px;letter-spacing:.06em;background:transparent;border-color:transparent}
+.phone .views .view[aria-pressed="true"]{background:color-mix(in srgb,var(--acc) 16%,var(--panel));border-color:var(--acc);color:var(--acc)}
+/* pattern: scenes, chords, the grid, then the song settings */
+.phone .panel[data-view="pattern"]{grid-template-rows:auto auto auto 1fr auto}   /* 1fr, not minmax(0,1fr): its auto minimum keeps the grid from shrinking under its rows, so the panel scrolls instead */
+.phone .panel[data-view="pattern"]>.under{order:1}
+.phone .panel[data-view="pattern"]>.chords{order:2}
+.phone .panel[data-view="pattern"]>.grid-wrap{order:3}
+.phone .panel[data-view="pattern"]>.songstrip{order:4}
+.phone .under{display:block}
+.phone .scenes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.phone .scenes .lbl{display:none}
+.phone .scenes .btn{padding:11px 2px;font-size:11px;letter-spacing:.04em;white-space:nowrap}
+.phone #holdFilter .hk{display:none}
+.phone .chords{gap:5px}
+.phone .chord{padding:6px 8px;gap:0}
+.phone .chord .n{font-size:14px}
+.phone .chord .d{font-size:9px}
+/* the grid turned on its side: steps run down the screen and the ten rows are columns a thumb can hit */
+.phone .grid-wrap{display:grid;overflow:visible;padding:0}
+.phone .grid{min-width:0;display:grid;grid-auto-flow:column;grid-template-rows:auto repeat(16,minmax(21px,1fr));grid-template-columns:16px repeat(10,minmax(0,1fr));gap:3px}
+.phone .row{display:contents}
+.phone .row.nums .cell-n{display:grid;place-items:center;padding:0;font-size:9px}
+.phone .rh{grid-template-columns:minmax(0,1fr);grid-template-rows:auto;gap:3px;padding:0;align-items:stretch}
+.phone .rh input[type=range],.phone .rh .dice{display:none}   /* re-roll is a long press on the name */
+.phone .trk{font-size:8px;letter-spacing:0;padding:0 1px;height:26px;line-height:24px;text-align:center}
+.phone .cell{height:auto;border-radius:5px;font-size:10px}
+.phone .songstrip{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+.phone .songstrip .tg{display:flex}
+.phone .fo{display:inline-block;height:40px;padding:0 13px}
+.phone .num{width:58px;height:40px;padding:0;font-size:15px}
+.phone select{padding:9px 6px;font-size:13px}
+/* booth */
+.phone .panel[data-view="booth"] #mic{flex:1 1 auto;padding:12px}
+.phone .pitch{height:150px}
+.phone .big{font-size:34px}
+.phone .ctls{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
+.phone .ctl{gap:0}
+.phone input[type=range]{height:36px}
+.phone input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px}
+.phone input[type=range]::-webkit-slider-thumb{width:24px;height:24px;border-radius:50%;margin-top:-9px}
+.phone .file-line{padding-top:8px}
+/* pads: two by four, filling the view */
+.phone .panel[data-view="pads"]{grid-template-rows:auto minmax(0,1fr);overflow:hidden}
+.phone .pads{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:10px;height:100%;min-height:0}
+.phone .pad{display:grid;min-height:0}
+.phone .pad-hit{aspect-ratio:auto;height:100%;min-height:0;padding:10px 12px;touch-action:none}
+.phone .pad-hit .nm{font-size:14px}
+.phone .mini{width:32px;height:32px;font-size:14px}
+.phone .tools{top:8px;right:8px;gap:6px}
+/* mix */
+.phone .master{grid-template-columns:minmax(0,1fr)}
+.phone .grp{grid-template-columns:84px minmax(0,1fr) minmax(0,1fr);gap:0 8px}
+.phone .btn.gmute{letter-spacing:.05em;padding:7px 3px}
+.phone .gs{grid-template-columns:minmax(0,1fr) 34px}
+.phone .take audio{height:40px}
+/* MC: a column. Controls, themes and the bridge row on top; the lyric sheet gets the height that is left and scrolls
+   inside its own frame, so following the singer never moves the controls. The details block stays off the phone. */
+.phone .panel[data-view="mc"]{grid-template-rows:auto auto auto minmax(150px,1fr)}
+.phone .mc>.ph{grid-row:1}
+.phone .themes{grid-row:2}
+.phone .bridge-row{grid-row:3}
+.phone .mc-body{grid-row:4}
+.phone .mc>.ph{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.phone .mc .booth-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:stretch}
+.phone .mc .booth-row select{min-width:0;width:100%;overflow:hidden;text-overflow:ellipsis}
+.phone .mc .booth-row .sync{grid-column:1/-1;width:auto}
+.phone .mc .booth-row #aiGo{padding:6px 4px;min-height:46px;font-size:11px;letter-spacing:.05em}   /* the same height whether the label wraps or not */
+.phone .themes{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.phone .themes::-webkit-scrollbar{display:none}
+.phone .themes .btn{flex:0 0 auto;padding:9px 10px;font-size:12px}
+.phone .mc-body{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;min-height:0;gap:6px;align-items:stretch}   /* stretch, or the sheet sizes to its lines and never clips */
+.phone .mc-side{display:contents}
+.phone .mc-title{grid-row:1}
+.phone .mc-status{grid-row:2}
+.phone .lyrics{grid-row:3;min-height:0;overflow:auto;overscroll-behavior:contain;position:relative;gap:6px;padding:6px 0;-webkit-mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 10px),transparent);mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 10px),transparent)}
+.phone .mc-side .kv{display:none}
+.phone .mc-health{grid-row:4}
+.bridge-row{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+.bridge-row[hidden]{display:none}
+.bridge-row input{flex:1 1 auto;min-width:0;background:var(--screen);border:1px solid var(--line);border-radius:6px;padding:9px 8px;font:500 12px var(--f-mono);color:var(--acc-2)}
+
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
 }
@@ -452,8 +566,8 @@ html.flip{background:var(--ground)}
       <output id="swing-out">8%</output>
     </div>
     <div class="tg tempo" role="group" aria-label="Tempo baseline">
-      <button class="btn tmode" data-tempo="down" aria-pressed="true" title="Downtempo: 120 BPM, and new beats and Gemma's songs are written around it"><b>120</b>down</button>
-      <button class="btn tmode" data-tempo="up" aria-pressed="false" title="Uptempo: 160 BPM, and new beats and Gemma's songs are written around it"><b>160</b>up</button>
+      <button class="btn tmode" data-tempo="down" aria-pressed="true" title="Downtempo: 120 BPM, and new beats and Gemma's songs are written around it"><b>120</b><span>down</span></button>
+      <button class="btn tmode" data-tempo="up" aria-pressed="false" title="Uptempo: 160 BPM, and new beats and Gemma's songs are written around it"><b>160</b><span>up</span></button>
     </div>
     <div class="tg fills">
       <button class="btn" id="fills" aria-pressed="true">Fills</button>
@@ -606,6 +720,8 @@ html.flip{background:var(--ground)}
         </div>
       </div>
       <div class="themes" id="aiThemes"><span class="lbl">Theme</span></div>
+      <!-- iOS app only: who plays the MC, this phone or a bridge on the Wi-Fi -->
+      <div class="bridge-row" id="bridgeRow" hidden><span class="lbl">Bridge</span><input id="bridgeUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="this phone · or laptop:8766"><button class="btn" id="bridgeSet">Set</button></div>
       <div class="mc-body">
         <div class="lyrics" id="aiLyrics"><p class="empty">Gemma gets the beat as it stands, picks a lane, tempo, key and scene order, re-rolls rows, sets the booth, writes a hook and verses with a melody for every line, and Pocket TTS sings them through the auto-tune. Needs the bridge with llamatalk: see the README.</p></div>
         <div class="mc-side">
@@ -1206,6 +1322,15 @@ let styleKey = 'glitter';
 // ?remote: also take commands from that server, so the page can be driven over ssh.
 const FLIP = /[?&]flip\b/.test(location.search), REMOTE = /[?&]remote\b/.test(location.search);
 const ZOOM = FLIP ? parseFloat(document.documentElement.style.zoom) || 2 : 1;   // set in <head>: a 960px-wide layout
+// ?phone (or any narrow touchscreen, decided in <head>): the iPhone layout, one view at a time with tabs along the
+// bottom. Inside the iOS app (ios/) the page also talks to the shell through webkit.messageHandlers.urm: haptics,
+// and the share sheet for takes.
+const PHONE = document.documentElement.classList.contains('phone'), PAGED = FLIP || PHONE;
+const NATIVE = !!(window.webkit && webkit.messageHandlers && webkit.messageHandlers.urm);
+const native = m => { if (NATIVE) try { webkit.messageHandlers.urm.postMessage(m); } catch (e) { /* no shell */ } };
+const haptic = k => native({ type: 'haptic', k });
+// the shell calls this when the app comes back from the background or a call ends
+window.__urmResume = () => { if (ctx && ctx.state !== 'running') ctx.resume(); };
 let song = generateSong('glitter', randSeed());
 const T = {};              // track channel nodes
 const N = {};              // master / bus nodes
@@ -2054,7 +2179,8 @@ function stopMic() {
 }
 function micErr(e) {
   boothMsg(e.name === 'NotAllowedError'
-    ? 'Microphone access was blocked. Allow the mic for this page (the icon in the address bar), then press Enable mic again.'
+    ? (NATIVE ? 'Microphone access is off. Allow it under Settings → Rap Machine → Microphone, then press Enable mic again.'
+              : 'Microphone access was blocked. Allow the mic for this page (the icon in the address bar), then press Enable mic again.')
     : 'Could not open a microphone: ' + (e.message || e.name));
 }
 async function toggleMic() {
@@ -2222,7 +2348,7 @@ function firePad(i, t) {
   else FX[p.id](t);
   setTimeout(() => {
     const b = $$('.pad-hit')[i]; b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 140);
-    led.flash = performance.now();
+    led.flash = performance.now(); haptic('pad');
   }, Math.max(0, (t - ctx.currentTime) * 1000));
 }
 function trimSilence(buf, thr = 0.02) {
@@ -2270,6 +2396,7 @@ let recorder = null, recStart = 0, takeN = 0;
 async function toggleRec() {
   await ensureAudio();
   if (ctx.state !== 'running') await ctx.resume();
+  haptic('rec');
   if (recorder) { recorder.stop(); recorder = null; return; }
   if (!window.MediaRecorder) { boothMsg('This browser cannot record audio (MediaRecorder missing).'); return; }
   const mime = pickMime();
@@ -2294,20 +2421,27 @@ function addTake(blob, secs, meta) {
   const tt = el('div', 'tt'); tt.append(el('b', '', { text: `TAKE ${takeN}` }), el('span', '', { text: `${fmtTime(secs)} · ${meta}` }));
   const au = el('audio', '', { controls: '', src: url, preload: 'metadata' });
   const dl = el('div', 'dl');
-  const a1 = el('a', 'btn', { href: url, download: `${base}.${ext}`, text: `.${ext}` });
+  // in the iOS app a download is the share sheet (Files, AirDrop, Messages…); elsewhere the browser downloads it
+  const a1 = NATIVE ? el('button', 'btn', { text: `.${ext}` }) : el('a', 'btn', { href: url, download: `${base}.${ext}`, text: `.${ext}` });
+  if (NATIVE) a1.addEventListener('click', () => shareBlob(blob, `${base}.${ext}`));
   const a2 = el('button', 'btn', { text: '.wav' });
   a2.addEventListener('click', async () => {
     a2.textContent = '…';
     try {
-      const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
-      const wurl = URL.createObjectURL(encodeWAV(buf));
-      const a = el('a', '', { href: wurl, download: `${base}.wav` }); document.body.append(a); a.click(); a.remove();
+      const buf = await ctx.decodeAudioData(await blob.arrayBuffer()), wav = encodeWAV(buf);
+      if (NATIVE) await shareBlob(wav, `${base}.wav`);
+      else { const a = el('a', '', { href: URL.createObjectURL(wav), download: `${base}.wav` }); document.body.append(a); a.click(); a.remove(); }
       a2.textContent = '.wav';
     } catch (e) { a2.textContent = 'WAV failed'; }
   });
   dl.append(a1, a2);
   box.append(tt, au, dl);
   list.prepend(box);
+}
+// the iOS shell takes the bytes to the share sheet
+async function shareBlob(blob, name) {
+  const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+  native({ type: 'share', name, mime: blob.type, data });
 }
 function encodeWAV(buf) {
   const nc = buf.numberOfChannels, sr = buf.sampleRate, n = buf.length, bytes = n * nc * 2;
@@ -2356,7 +2490,10 @@ function buildGridUI() {
     const row = el('div', 'row', { role: 'row' }); row.dataset.kind = tr.kind;
     const rh = el('div', 'rh');
     const mb = el('button', 'trk', { 'aria-pressed': 'true', id: 'trk-' + tr.id, title: 'Mute / unmute' }); mb.textContent = tr.label;
-    mb.addEventListener('click', () => { mix[tr.id].mute = !mix[tr.id].mute; renderMutes(); applyMix(); });
+    let mbHeld = 0, mbLong = false;   // on a touchscreen a long press on the name re-rolls the row (the phone has no room for the dice)
+    mb.addEventListener('pointerdown', e => { if (e.pointerType !== 'touch') return; mbLong = false; clearTimeout(mbHeld); mbHeld = setTimeout(() => { mbLong = true; rerollRow(tr.id); haptic('pad'); }, 450); });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) mb.addEventListener(ev, () => clearTimeout(mbHeld));
+    mb.addEventListener('click', () => { if (mbLong) { mbLong = false; return; } mix[tr.id].mute = !mix[tr.id].mute; renderMutes(); applyMix(); haptic('tick'); });
     const dice = el('button', 'dice', { 'aria-label': `Re-roll ${tr.label}`, title: 'Re-roll this row', text: '⟳' });
     dice.addEventListener('click', () => rerollRow(tr.id));
     const vol = el('input', '', { type: 'range', min: '0', max: '1', step: '0.01', id: 'vol-' + tr.id, 'aria-label': `${tr.label} volume` });
@@ -2366,8 +2503,12 @@ function buildGridUI() {
     for (let i = 0; i < 16; i++) {
       const c = el('button', 'cell' + (i % 4 === 0 ? ' beat' : ''), { 'aria-label': `${tr.label} step ${i + 1}` });
       c.append(el('span'));
-      c.addEventListener('click', e => editCell(tr.id, i, e.shiftKey));
-      c.addEventListener('contextmenu', e => { e.preventDefault(); editCell(tr.id, i, true); });
+      // on a touchscreen a long press is the shift-click: pitch, vowel or slice instead of on and off
+      let held = 0, longed = false;
+      c.addEventListener('pointerdown', e => { if (e.pointerType !== 'touch') return; longed = false; clearTimeout(held); held = setTimeout(() => { longed = true; editCell(tr.id, i, true); haptic('tick'); }, 420); });
+      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) c.addEventListener(ev, () => clearTimeout(held));
+      c.addEventListener('click', e => { if (longed) { longed = false; return; } editCell(tr.id, i, e.shiftKey); haptic('tick'); });
+      c.addEventListener('contextmenu', e => { e.preventDefault(); if (!longed) editCell(tr.id, i, true); });
       row.append(c); cellEls[tr.id].push(c);
     }
     g.append(row);
@@ -2568,7 +2709,7 @@ function initUI() {
   const key = $('#key'); NOTES.forEach((n, i) => key.append(el('option', '', { value: String(i), text: n })));
   const mode = $('#mode'); Object.entries(SCALES).forEach(([k, v]) => mode.append(el('option', '', { value: k, text: v.name })));
   buildGridUI(); renderPads();
-  $$('.style-btn').forEach(b => b.addEventListener('click', () => setStyle(b.dataset.style)));
+  $$('.style-btn').forEach(b => b.addEventListener('click', () => { setStyle(b.dataset.style); haptic('tick'); }));
   $('#gen').addEventListener('click', () => newSong(true));
   $('#play').addEventListener('click', togglePlay);
   $('#rec').addEventListener('click', toggleRec);
@@ -2578,7 +2719,7 @@ function initUI() {
   $('#mode').addEventListener('change', () => { song.mode = $('#mode').value; finalizeSong(song); renderChords(); pushTuner(); scheduleFlipRender(); });
   $('#swing').addEventListener('input', () => { song.swing = +$('#swing').value / 100; $('#swing-out').textContent = $('#swing').value + '%'; });
   $('#fills').addEventListener('click', () => { song.fills = !song.fills; $('#fills').setAttribute('aria-pressed', String(song.fills)); });
-  $$('.scene').forEach(b => b.addEventListener('click', () => setScene(b.dataset.scene)));
+  $$('.scene').forEach(b => b.addEventListener('click', () => { setScene(b.dataset.scene); haptic('tick'); }));
   const hf = $('#holdFilter');
   const hfDown = e => { e.preventDefault(); if (ctx) N.perf.frequency.setTargetAtTime(380, ctx.currentTime, 0.12); hf.setAttribute('aria-pressed', 'true'); };
   const hfUp = () => { if (ctx) N.perf.frequency.setTargetAtTime(sceneFilter, ctx.currentTime, 0.15); hf.setAttribute('aria-pressed', 'false'); };
@@ -2675,6 +2816,7 @@ function initUI() {
   });
   document.addEventListener('keyup', e => { if (e.key === 'f' || e.key === 'F') hfUp(); });
   if (FLIP) initFlip();
+  if (PHONE) initPhone();
   setStyle('glitter');
   initAI();
 }
@@ -2685,11 +2827,11 @@ const VIEWS = ['pattern', 'booth', 'pads', 'mix', 'mc'];
 let view = 'pattern';
 function setView(v) {
   view = v;
-  $$('.panel[data-view]').forEach(e => { e.hidden = FLIP && e.dataset.view !== v; });
+  $$('.panel[data-view]').forEach(e => { e.hidden = PAGED && e.dataset.view !== v; });
   $$('.view').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
   if (v === 'pattern') fitGrid();
 }
-function stepView(d) { if (FLIP) setView(VIEWS[(VIEWS.indexOf(view) + d + VIEWS.length) % VIEWS.length]); }
+function stepView(d) { if (PAGED) setView(VIEWS[(VIEWS.indexOf(view) + d + VIEWS.length) % VIEWS.length]); }
 
 /* =====================================================================
    RETROID POCKET FLIP 2
@@ -2951,6 +3093,52 @@ async function togglePlay() {
   await ensureAudio();
   if (ctx.state !== 'running') await ctx.resume();
   playing ? stopTransport() : startTransport();
+  haptic('play');
+}
+
+/* =====================================================================
+   iPHONE (?phone)
+   The page inside the iOS app (ios/), or any narrow touchscreen. One view at a time with tabs along the bottom
+   and the transport above them; the song settings (BPM, key, swing, fills) move from the transport onto the
+   Pattern view; the grid is turned on its side (CSS), so the steps run down the screen and the ten rows are
+   columns wide enough for a thumb. A long press on a step is the shift-click. A flick left or right on a view's
+   header changes view. Inside the app the shell answers the MC endpoints itself (Apple Intelligence and a voice
+   from the phone, or a bridge on the Wi-Fi) and takes the takes to the share sheet.
+   ===================================================================== */
+function initPhone() {
+  const strip = el('div', 'songstrip');
+  strip.append($('#bpm').closest('.tg'), $('#key').closest('.tg'), $('.tg.swing'), $('.tg.fills'));
+  $('.panel[data-view="pattern"]').append(strip);
+  $('#gen').textContent = 'Generate';
+  $('.panel[data-view="pads"] h2 small').textContent = '● records 2 s of your tuned vocal';
+  const want = (location.search.match(/[?&]view=(\w+)/) || [])[1];
+  setView(VIEWS.includes(want) ? want : 'pattern');
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) b.blur(); });
+  document.addEventListener('contextmenu', e => e.preventDefault());   // no long-press menu or selection handles
+  // a flick between views, unless it started on something that drags or scrolls itself
+  let sx = 0, sy = 0, swipe = false;
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+    swipe = e.touches.length === 1 && !(e.target.closest && e.target.closest('input, select, canvas, .cell, .pad, .lyrics, .takes'));
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!swipe) return; swipe = false;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 70 && Math.abs(dy) < 50) stepView(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  // iOS suspends the audio context when the app leaves the screen or a call comes in: the next touch wakes it
+  document.addEventListener('touchend', () => { if (ctx && ctx.state !== 'running') ctx.resume(); }, { passive: true });
+  if (NATIVE) {
+    const row = $('#bridgeRow'), inp = $('#bridgeUrl');
+    row.hidden = false;
+    fetch('/bridge').then(r => r.json()).then(d => { inp.value = d.url || ''; }).catch(() => {});
+    const setBridge = async () => {
+      await fetch('/bridge', { method: 'POST', body: JSON.stringify({ url: inp.value.trim() }), headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+      inp.blur(); aiHealth();
+    };
+    $('#bridgeSet').addEventListener('click', setBridge);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') setBridge(); });
+  }
 }
 
 /* =====================================================================
@@ -2966,6 +3154,8 @@ const THEMES = ['surprise me', 'flexing', 'heartbreak', 'late night drive', 'par
 const ai = { on: false, loop: true, theme: THEMES[0], voices: [], health: null, gen: 0, plan: null, next: null, nextBusy: false, anchor: 0,
              sync: 45, sing: 'auto', tok: 0, lineOn: 0, vox: [], evts: [], srcs: [], timers: [], titles: [], lineEls: [], secEls: [], status: '' };
 const MC = /[?&]mc\b/.test(location.search);
+// who plays: Gemma and Pocket TTS through the bridge, or whatever the shell reports (Apple Intelligence on an iPhone)
+const mcName = () => (ai.health && ai.health.llmName) || 'Gemma', ttsName = () => (ai.health && ai.health.ttsName) || 'Pocket TTS';
 function initAI() {
   const box = $('#aiThemes');
   THEMES.forEach(t => {
@@ -2983,15 +3173,22 @@ async function aiHealth() {
   try {
     const h = await (await fetch('/ai/health')).json();
     ai.health = h;
+    const ln = mcName(), tn = ttsName();
     if (h.voices.length && ai.voices.join() !== h.voices.join()) {
       ai.voices = h.voices;
       const sel = $('#aiVoice'); sel.innerHTML = '';
-      sel.append(el('option', '', { value: '', text: 'voice: Gemma picks' }));
+      sel.append(el('option', '', { value: '', text: `voice: ${ln} picks` }));
       h.voices.forEach(v => sel.append(el('option', '', { value: v, text: v })));
     }
-    const llm = h.llm ? `Gemma <b>${(h.model || 'ready').replace(/\.gguf$/, '')}</b>` : h.llmUrl ? `Gemma <b>${h.llmStatus || 'down'}</b>` : 'no LLM';
-    const tts = h.tts ? `Pocket TTS <b>${h.voices.length} voices</b>` : h.ttsUrl ? 'Pocket TTS <b>down</b>' : 'no TTS';
+    const llm = h.llm ? `${ln} <b>${(h.model || 'ready').replace(/\.gguf$/, '')}</b>` : h.llmUrl ? `${ln} <b>${h.llmStatus || 'down'}</b>` : 'no LLM';
+    const tts = h.tts ? `${tn} <b>${h.voices.length} voices</b>` : h.ttsUrl ? `${tn} <b>down</b>` : 'no TTS';
     $('#aiHealth').innerHTML = `${llm} · ${tts}`;
+    // the panel is named for who plays
+    $('.mc h2 small').textContent = h.llmName ? `${ln} · ${tn}` : 'Gemma · llamatalk · Pocket TTS';
+    if (!ai.on) $('#aiGo').textContent = `Let ${ln} play`;
+    $('#aiSing option[value="auto"]').textContent = `sing: ${ln} picks`;
+    const empty = $('#aiLyrics .empty');
+    if (empty && h.native) empty.textContent = `${ln} gets the beat as it stands, picks a lane, key and scene order, re-rolls rows, sets the booth, writes a hook and verses with a melody for every line, and a voice from this phone sings them through the auto-tune. Or point Bridge at a laptop running flip2/server.py --llm --tts for Gemma and Pocket TTS.`;
     return h;
   } catch (e) {
     ai.health = null; $('#aiHealth').textContent = 'no bridge: open the page through flip2/server.py --llm --tts';
@@ -3027,9 +3224,9 @@ async function aiRequestPlan(gen) {
     catch (e) { lost++; }
     if (lost >= 30) throw new Error('lost the bridge while Gemma was writing');
     if (!p || p.job !== d.job) continue;
-    if (p.phase === 'prompt') aiSay('Gemma is reading the beat…');
-    else if (p.phase === 'writing') aiSay(`Gemma is writing… ${p.tokens} tokens, ${Math.round(p.secs)} s`);
-    else if (p.phase === 'error') throw new Error(p.error || 'Gemma failed');
+    if (p.phase === 'prompt') aiSay(`${mcName()} is reading the beat…`);
+    else if (p.phase === 'writing') aiSay(`${mcName()} is writing… ${p.tokens} tokens, ${Math.round(p.secs)} s`);
+    else if (p.phase === 'error') throw new Error(p.error || `${mcName()} failed`);
     else if (p.phase === 'done') {
       const f = await (await fetch(`/ai/plan?job=${d.job}`, { cache: 'no-store' })).json();
       if (!f.plan) throw new Error(f.error || 'no plan');
@@ -3218,7 +3415,7 @@ async function aiSynth(plan, gen, onProgress) {
     onProgress && onProgress(i, lines.length);
     try {
       const r = await fetch('/ai/tts', { method: 'POST', body: JSON.stringify({ text: L.text, voice }), headers: { 'Content-Type': 'application/json' } });
-      if (!r.ok) throw new Error('tts ' + r.status);
+      if (!r.ok) { let m = 'tts ' + r.status; try { m = (await r.json()).error || m; } catch (e) { /* not json */ } throw new Error(m); }
       const buf = trimSilence(await ctx.decodeAudioData(await r.arrayBuffer()), 0.01), line = plan.sections[L.si].lines[L.li];
       line.buf = buf; line.env = voxEnv(buf);
       if (plan.sections[L.si].sung) {
@@ -3234,6 +3431,8 @@ async function aiSynth(plan, gen, onProgress) {
       }
     } catch (e) { plan.sections[L.si].lines[L.li].buf = null; lastErr = 'tts: ' + e.message; }
   }
+  // every line failed: say why, rather than playing a song nobody sings
+  if (lines.length && lines.every(L => plan.sections[L.si].lines[L.li].buf === null)) aiSay(`${ttsName()} gave no sound: ${lastErr.replace(/^tts: /, '')}`, true);
   return true;
 }
 // the tempo a plan will be played at: what aiApply will make of its bpm (the performer's zone, or the sync leader's)
@@ -3391,7 +3590,7 @@ async function aiPrefetch(gen) {
   try {
     const plan = await aiRequestPlan(gen); if (!plan || gen !== ai.gen) return;
     if (moved()) { again = true; return; }   // the performer switched baseline while Gemma wrote it
-    await aiSynth(plan, gen, (i, n) => aiSay(`Pocket TTS is singing the next one… ${i + 1}/${n}`)); if (gen !== ai.gen) return;
+    await aiSynth(plan, gen, (i, n) => aiSay(`${ttsName()} is singing the next one… ${i + 1}/${n}`)); if (gen !== ai.gen) return;
     if (moved()) { again = true; return; }
     ai.next = plan; aiSay(`next up: “${plan.title}”`);
   } catch (e) { if (gen === ai.gen) aiSay('next plan failed: ' + e.message, true); }
@@ -3400,17 +3599,17 @@ async function aiPrefetch(gen) {
 async function aiStart() {
   await ensureAudio(); if (ctx.state !== 'running') await ctx.resume();
   const h = await aiHealth();
-  if (!h || !h.llm) { aiSay(h && h.llmStatus === 'loading' ? 'Gemma is still loading, try again in a bit' : 'no language model: start the bridge with --llm (see README)', true); return; }
-  if (!h.tts) { aiSay('no Pocket TTS: start the bridge with --tts (see README)', true); return; }
+  if (!h || !h.llm) { aiSay(h && h.llmHint ? h.llmHint : h && h.llmStatus === 'loading' ? `${mcName()} is still loading, try again in a bit` : 'no language model: start the bridge with --llm (see README)', true); return; }
+  if (!h.tts) { aiSay(h.ttsHint || 'no Pocket TTS: start the bridge with --tts (see README)', true); return; }
   ai.on = true; const gen = ++ai.gen; ai.next = null; ai.anchor = song.bpm;
-  $('#aiGo').textContent = 'Stop Gemma'; $('#aiGo').setAttribute('aria-pressed', 'true');
+  $('#aiGo').textContent = `Stop ${mcName()}`; $('#aiGo').setAttribute('aria-pressed', 'true');
   try {
     const plan = await aiRequestPlan(gen); if (!plan || gen !== ai.gen) return;
     aiApply(plan); renderPlan(plan);
-    const ok = await aiSynth(plan, gen, (i, n) => aiSay(`Pocket TTS is singing… ${i + 1}/${n}`)); if (!ok || gen !== ai.gen) return;
+    const ok = await aiSynth(plan, gen, (i, n) => aiSay(`${ttsName()} is singing… ${i + 1}/${n}`)); if (!ok || gen !== ai.gen) return;
     aiStartPlan(plan, gen);
     if (ai.loop) aiPrefetch(gen);
-  } catch (e) { aiSay('Gemma could not play: ' + e.message, true); aiStop(); }
+  } catch (e) { aiSay(`${mcName()} could not play: ` + e.message, true); aiStop(); }
 }
 function aiStop() {
   ai.on = false; ai.gen++; ai.evts = []; ai.next = null; ai.lineOn = 0; ai.vox = [];
@@ -3418,7 +3617,7 @@ function aiStop() {
   ai.srcs.forEach(s => { try { s.stop(); } catch (e) { /* already done */ } }); ai.srcs = [];
   if (ctx) pushTuner();
   $$('.line.now').forEach(x => x.classList.remove('now')); ai.secEls.forEach(s => s.classList.remove('now'));
-  $('#aiGo').textContent = 'Let Gemma play'; $('#aiGo').setAttribute('aria-pressed', 'false');
+  $('#aiGo').textContent = `Let ${mcName()} play`; $('#aiGo').setAttribute('aria-pressed', 'false');
   if (ai.status && !$('#aiStatus').classList.contains('err')) aiSay('stopped');
 }
 
@@ -3462,8 +3661,8 @@ function drawPitch() {
   g.clearRect(0, 0, W, H);
   let lastV = null; for (let i = trace.length - 1; i >= Math.max(0, trace.length - 40); i--) if (trace[i].v) { lastV = trace[i]; break; }
   if (lastV) pitchCenter += (lastV.o - pitchCenter) * 0.06;
-  const span = FLIP ? 13 : 16, px = H / span, yOf = m => H / 2 - (m - pitchCenter) * px, mask = tunerKeysCache;
-  g.font = `${(FLIP ? 8 : 10) * dpr}px "JetBrains Mono", monospace`; g.textBaseline = 'middle';
+  const span = FLIP ? 13 : PHONE ? 9 : 16, px = H / span, yOf = m => H / 2 - (m - pitchCenter) * px, mask = tunerKeysCache;   // fewer semitones on a short trace, so the note labels keep apart
+  g.font = `${(FLIP ? 8 : PHONE ? 9 : 10) * dpr}px "JetBrains Mono", monospace`; g.textBaseline = 'middle';
   for (let m = Math.floor(pitchCenter - span / 2) - 1; m <= Math.ceil(pitchCenter + span / 2) + 1; m++) {
     const pc = pcOf(m); if (!mask[pc]) continue;
     const y = yOf(m);
@@ -3486,7 +3685,7 @@ function drawPitch() {
   line('o', C.acc, 2.4 * dpr, 10 * dpr);
   if (!micStream && !vFileSrc && trace.every(d => !d.v)) {
     g.fillStyle = C.dim; g.textAlign = 'center'; g.font = `${12 * dpr}px "Chakra Petch", sans-serif`;
-    g.fillText(FLIP ? 'Press the left stick (M) and sing — grey is you, bright is the tune.' : 'Enable the mic and sing — grey is your voice, the bright line is what comes out.', W / 2, H / 2);
+    g.fillText(FLIP ? 'Press the left stick (M) and sing — grey is you, bright is the tune.' : PHONE ? 'Enable the mic and sing — grey in, bright out.' : 'Enable the mic and sing — grey is your voice, the bright line is what comes out.', W / 2, H / 2);
     g.textAlign = 'left';
   }
 }

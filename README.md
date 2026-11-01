@@ -144,6 +144,26 @@ Plug in headphones: through the speakers the internal mic feeds back into the tu
 
 **Wi-Fi sync.** The bridge speaks HI5S, the sync of [HI5](https://github.com/mercurious/hi5), [Jaffedrone](https://github.com/mercurious/jaffedrone) and [fliptribe](https://github.com/mercurious/fliptribe), so the machines lock to each other on the same network with no setup. Every unit broadcasts 32 bytes on UDP 5150 ten times a second: tempo, play/stop and its 16th-step position. A unit set to LEAD leads, otherwise the lowest id among the AUTO units does; FOLLOW never leads. Followers take the leader's tempo, start and stop with it (joining at its position), and pull their phase in through an 8-sample median: more than half a step off, they jump; less, they trim their clock by up to 3%. The Rap Machine follows with two extras. The bridge reads the leader through the Wi-Fi scatter: power save holds broadcasts for the next beacon, so it keeps 8 s of packets and trusts the quickest. The page adds a slow integral to the trim, so a unit whose clock runs a little fast or slow settles on zero offset rather than a standing one. Measured on a Flip 2 over home Wi-Fi: locked within about ±1 ms in 10 s following a leader, and HI5 following the Flip 2 at +2 ms. The **sync** chip in the views row shows the role and the offset (`follow +4ms`, `lead ·2`); tap it to cycle off, auto, lead and follow. It starts on `auto` (`URM_SYNC` or `--sync`; `URM_SYNC_PORT=0` turns it off). This is separate from the jam link on UDP 47800, which also carries key, mode and chords for autojam, and both run at once.
 
+## iPhone
+
+The same page runs as an app on an iPhone. `ios/` holds the Xcode project (`UndergroundRapMachine.xcodeproj`, opened through `ios_rap_machine.xcworkspace` at the top of the repo); the app is a SwiftUI shell around a web view that loads `underground-rap-machine.html?phone` from its own bundle, so the instrument is the one file everywhere.
+
+Open with `?phone` (the page also picks the layout by itself on a narrow touchscreen; `?desktop` turns that off) and the page lays itself out for a portrait phone: the four lanes along the top, one view at a time with **Pattern**, **Booth**, **Pads**, **Mix** and **MC** as tabs along the bottom, and the transport just above them: play, Generate, the 120 / 160 tempo switch and the record dot. A flick left or right on a view's header changes view.
+
+| View | On the phone |
+|---|---|
+| Pattern | The scenes, the chords, then the grid turned on its side: the 16 steps run down the screen and the ten rows are columns a thumb can hit. Tap a step to toggle it; a long press is the shift-click (808 pitch, lead note, chop vowel, flip slice). A row's name at the top of its column mutes it; hold it to re-roll the row. BPM, key, scale, swing and fills sit at the bottom of the view. |
+| Booth | The pitch trace and the readout, a big Enable mic, then the booth sliders two to a row. iOS picks the mic (built-in, wired or Bluetooth) with the audio route, so there is no mic menu. |
+| Pads | Two by four, filling the view, multi-touch. ● records 2 s of your tuned vocal as before. |
+| Mix | Master, groups and takes in one column. A take's `.m4a` or `.wav` opens the share sheet: Files, AirDrop, Messages, Voice Memos. |
+| MC | The same MC, with a **Bridge** row that says who plays (below). |
+
+**The shell.** It puts the audio session in play-and-record with the system's voice processing off and a 5 ms buffer, grants the page the microphone (one system prompt, no browser prompt), keeps the screen awake, answers pad hits and step edits with haptics, and takes the page's audio context back after a call. The page is served on the app's own URL scheme, which makes it a secure context, so the mic works offline. Takes record as AAC (`.m4a`) in Safari's engine, with `.wav` from the page as everywhere else.
+
+**MC on the phone.** With no bridge in sight the phone plays the MC itself: Apple Intelligence writes the plan (the same brief as Gemma gets, as a guided generation into the plan's schema, so it always parses) and one of the iPhone's own voices speaks the lines, which the page then sings through the auto-tune exactly as it does with Pocket TTS. It needs Apple Intelligence turned on; the MC view says so if it is not. Or type the address of a laptop running `flip2/server.py --llm --tts` into **Bridge** (`http://laptop:8766`) and the app forwards every MC call there for Gemma and Pocket TTS. The bridge address is remembered.
+
+**Building it.** Open `ios_rap_machine.xcworkspace` in Xcode 26 or later. To run on a phone, copy `ios/Signing.example.xcconfig` to `ios/Signing.xcconfig` (untracked) and put your Apple Developer team ID in it; the project signs automatically from that file and the team never enters the repo. Pick the phone and run. It runs in the iOS Simulator too (Xcode 27 shows simulators in Device Hub), with two gaps there: the simulator has no microphone to speak of, and its speech voices are broken (the voice database fails to load), so Apple Intelligence writes the songs but no line is heard; the MC status says so. Use the phone for the booth and the singing.
+
 ## How it works
 
 **Auto-tune** runs in an AudioWorklet (with a ScriptProcessor fallback):

@@ -1,0 +1,3 @@
+// Copy to Signing.xcconfig (untracked) and put your own Apple Developer team ID here. Xcode then signs the app
+// automatically for your devices. Without it the app still builds and runs in the simulator.
+DEVELOPMENT_TEAM =
