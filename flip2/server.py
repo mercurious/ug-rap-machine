@@ -13,8 +13,6 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
   server.py --test                                           light each segment in turn, to check ORDER
   server.py --key m | --click "#gen" | --set "#bpm" 120      send a command to the running server
   server.py --status                                         print the page's last heartbeat
-  server.py --grant-mic                                      allow the mic for this origin in the house
-                                                             Firefox profile (Firefox must be closed)
   server.py --llm http://127.0.0.1:8096 --tts http://127.0.0.1:8097
                                                              also bridge Gemma (llama-server) and Pocket TTS
                                                              (tts-server) for the MC mode: POST /ai/plan starts the
@@ -41,7 +39,7 @@ the RGB rings around the sticks from the page. Standard library only (ROCKNIX sh
 
 The rings are restored to what they showed before when the server exits.
 """
-import argparse, json, math, os, random, re, signal, socket, sqlite3, struct, subprocess, sys, threading, time, urllib.error, urllib.request
+import argparse, json, math, os, random, re, signal, socket, struct, subprocess, sys, threading, time, urllib.error, urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 LED_ROOT = "/sys/class/leds"
@@ -49,7 +47,6 @@ LED_ROOT = "/sys/class/leds"
 # The segments are numbered counter-clockwise on the Flip 2, so the clock runs 1, 4, 3, 2.
 # Verify with --test and fix here if it runs the wrong way round.
 ORDER = {"l": [1, 4, 3, 2], "r": [1, 4, 3, 2]}
-PROFILE = "/storage/.mozilla/firefox-rocknix"
 
 
 class Ring:
@@ -862,30 +859,6 @@ def send(port, path, obj=None):
         return json.loads(r.read() or b"{}")
 
 
-def grant_mic(port):
-    """Firefox keeps site permissions in moz_perms; a row with permission 1 is Allow, no expiry."""
-    if os.path.exists("/storage/apps/firefox-rocknix/firefox.pid"):
-        sys.exit("Firefox is running (firefox.pid exists); close it first")
-    db = f"{PROFILE}/permissions.sqlite"
-    if not os.path.exists(db):
-        sys.exit(f"{db} not found")
-    origin = f"http://127.0.0.1:{port}"
-    con = sqlite3.connect(db)
-    try:
-        for typ in ("microphone",):
-            have = con.execute("select permission from moz_perms where origin=? and type=?", (origin, typ)).fetchone()
-            if have and have[0] == 1:
-                print(f"{typ} already allowed for {origin}")
-                continue
-            con.execute("delete from moz_perms where origin=? and type=?", (origin, typ))
-            con.execute("insert into moz_perms (origin,type,permission,expireType,expireTime,modificationTime) values (?,?,1,0,0,?)",
-                        (origin, typ, int(time.time() * 1000)))
-            print(f"{typ} allowed for {origin}")
-        con.commit()
-    finally:
-        con.close()
-
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--port", type=int, default=8766)
@@ -895,7 +868,6 @@ def main():
     ap.add_argument("--click", help="click a CSS selector on the page (?remote)")
     ap.add_argument("--set", nargs=2, metavar=("SELECTOR", "VALUE"), help="set an input's value on the page (?remote)")
     ap.add_argument("--status", action="store_true", help="print the page's last heartbeat")
-    ap.add_argument("--grant-mic", action="store_true", help="allow the mic for this origin in the house Firefox profile")
     ap.add_argument("--llm", default=os.environ.get("URM_LLM"), help="llama-server base URL for the MC mode")
     ap.add_argument("--llm-model", default=os.environ.get("URM_LLM_MODEL"), help="model to ask for, for a server that hosts several (Ollama)")
     ap.add_argument("--tts", default=os.environ.get("URM_TTS"), help="tts-server (Pocket TTS) base URL for the MC mode")
@@ -909,8 +881,6 @@ def main():
     a = ap.parse_args()
     if a.test:
         return test_order()
-    if a.grant_mic:
-        return grant_mic(a.port)
     if a.key or a.click or a.set:
         cmd = {}
         if a.key:

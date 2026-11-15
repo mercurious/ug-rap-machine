@@ -1,9 +1,10 @@
 #!/bin/sh
 # Underground Rap Machine on the Retroid Pocket Flip 2 (ROCKNIX).
 # Starts the bridge (server.py: serves the page on 127.0.0.1:8766 and drives the stick LED rings),
-# opens the page in the house Firefox (kiosk) through its launcher, and once Firefox is up swaps in
-# the controller profile for the rap machine. Leave with Guide (Home) or the L1+Select+Start chord;
-# everything is cleaned up and the rings go back to what they showed.
+# then opens the page in Donkey (https://github.com/mercurious/donkey) in kiosk mode, on its own profile
+# (donkey-rap-machine) with the rap machine's controller profile and prefs. Leave with Guide (Home) or the
+# L1+Select+Start chord; Donkey restores the controller, and the rings go back to what they showed.
+#   DONKEY_HOME=...  where Donkey lives (default: from the Donkey port entry, else /storage/apps/donkey)
 #   URM_PORT=8766   URM_REMOTE=1 adds ?remote so `server.py --key ...` can drive the page over ssh
 #   URM_AI=1 also starts Gemma (llama-server, E4B with its MTP head, big cores) and Pocket TTS
 #   (tts-server) from the retro-voice-chat llamatalk kit for the MC mode; URM_MODEL=e2b for the small
@@ -13,17 +14,21 @@
 
 [ -f /etc/profile ] && . /etc/profile >/dev/null 2>&1
 APP=/storage/apps/rap-machine
-FF=/storage/apps/firefox-rocknix
 PORT=${URM_PORT:-8766}
 LOG=$APP/logs/launch.log
 mkdir -p "$APP/logs"
 echo "===== $(date -u +%FT%TZ) launch" >> "$LOG"
 
-[ -x "$FF/launch.sh" ] || { echo "house Firefox launcher not found at $FF/launch.sh" | tee -a "$LOG" >&2; exit 1; }
-# One at a time: a second Firefox on the same profile exits at once, and the house launcher's cleanup
-# would then remove the running session's pid file and reset its controller profile.
-if FP=$(sed -n 1p "$FF/firefox.pid" 2>/dev/null) && [ -n "$FP" ] && kill -0 "$FP" 2>/dev/null; then
-  echo "Firefox is already running (pid $FP); leave it first (Guide, or L1+Select+Start)" | tee -a "$LOG" >&2; exit 1
+# Donkey's home: $DONKEY_HOME, else the launcher its port entry runs, else the default install.
+DONKEY=${DONKEY_HOME:-}
+if [ -z "$DONKEY" ] && [ -f /storage/roms/ports/Donkey.sh ]; then
+  DONKEY=$(sed -n 's|.*"\(/[^"]*\)/launch\.sh".*|\1|p' /storage/roms/ports/Donkey.sh | head -n 1)
+fi
+DONKEY=${DONKEY:-/storage/apps/donkey}
+[ -x "$DONKEY/launch.sh" ] || { echo "Donkey not found at $DONKEY/launch.sh (https://github.com/mercurious/donkey)" | tee -a "$LOG" >&2; exit 1; }
+# One Donkey session at a time; Donkey refuses a second one too, but say why before starting anything.
+if FP=$(cat /run/donkey/firefox.pid 2>/dev/null) && [ -n "$FP" ] && kill -0 "$FP" 2>/dev/null; then
+  echo "Donkey is already running (pid $FP); leave it first (Home, or L1+Select+Start)" | tee -a "$LOG" >&2; exit 1
 fi
 if python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:$PORT/status', timeout=1)" 2>/dev/null; then
   echo "something already answers on port $PORT; is the rap machine running?" | tee -a "$LOG" >&2; exit 1
@@ -88,9 +93,9 @@ while [ $i -lt 20 ]; do
   i=$((i + 1)); sleep 0.25
 done
 
-touch "$APP/.started"
 URL="http://127.0.0.1:$PORT/underground-rap-machine.html?flip${URM_REMOTE:+&remote}${AI_ARGS:+&mc}"
-"$FF/launch.sh" --kiosk "$URL" &
+DONKEY_PROFILE=rap-machine DONKEY_CONTROLLER="$APP/rap-machine.yaml" DONKEY_PREFS="$APP/rap-machine.prefs" \
+  "$DONKEY/launch.sh" --kiosk "$URL" &
 FFL=$!
 
 # Firefox's audio graph threads (the beat, the vocal chain and the auto-tune worklet all render there)
@@ -112,21 +117,5 @@ audio_boost() {
 }
 audio_boost &
 BOOST=$!
-
-# The house launcher loads its own InputPlumber profile before it starts Firefox and writes the pid
-# file after; ours goes in once that file is newer than this launch.
-i=0
-while [ $i -lt 60 ] && kill -0 "$FFL" 2>/dev/null; do
-  if [ "$FF/firefox.pid" -nt "$APP/.started" ]; then
-    if busctl call org.shadowblip.InputPlumber /org/shadowblip/InputPlumber/CompositeDevice0 \
-         org.shadowblip.Input.CompositeDevice LoadProfilePath s "$APP/rap-machine.yaml" >> "$LOG" 2>&1; then
-      echo "controller profile loaded" >> "$LOG"
-    else
-      echo "controller profile NOT loaded (busctl failed)" >> "$LOG"
-    fi
-    break
-  fi
-  i=$((i + 1)); sleep 0.5
-done
 
 wait "$FFL"

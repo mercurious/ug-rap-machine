@@ -1,0 +1,7 @@
+// Firefox prefs for the Underground Rap Machine's own Donkey profile (donkey-rap-machine).
+// flip2/launch.sh passes this file as DONKEY_PREFS; Donkey appends it to user.js on every start.
+// Web Audio may start before the first tap, so the app can be driven over ssh for testing
+// (flip2/server.py --key). The app itself still only starts audio on a button.
+user_pref("media.autoplay.block-webaudio", false);
+// The profile only ever opens the local page, so the mic is allowed without a prompt.
+user_pref("permissions.default.microphone", 1);

@@ -108,15 +108,16 @@ then <http://127.0.0.1:8766/underground-rap-machine.html?mc>. Point `--llm` at a
 
 ## Retroid Pocket Flip 2
 
-The same file runs as a handheld instrument on a Flip 2 with [ROCKNIX](https://rocknix.org) and the house Firefox build. `flip2/` holds the device side:
+The same file runs as a handheld instrument on a Flip 2 with [ROCKNIX](https://rocknix.org), in [Donkey](https://github.com/mercurious/donkey), a Firefox for ROCKNIX that has to be installed on the device first. `flip2/` holds the device side:
 
 | File | Role |
 |---|---|
-| `server.py` | Serves the page on `http://127.0.0.1:8766` (a secure context, so the mic works) and writes the stick LED rings from `POST /led`. Also `--test` to see the ring order, `--grant-mic` to allow the mic for that origin in the Firefox profile, and `--key`, `--click`, `--set`, `--status` to drive a page opened with `?remote` from ssh. |
-| `launch.sh` | Starts the server, opens the page in kiosk mode through `/storage/apps/firefox-rocknix/launch.sh`, then loads the controller profile. Cleans up and restores the rings on exit. |
-| `rap-machine.yaml` | InputPlumber profile: which button sends which key. |
+| `server.py` | Serves the page on `http://127.0.0.1:8766` (a secure context, so the mic works) and writes the stick LED rings from `POST /led`. Also `--test` to see the ring order, and `--key`, `--click`, `--set`, `--status` to drive a page opened with `?remote` from ssh. |
+| `launch.sh` | Starts the server and opens the page in kiosk mode through Donkey's `launch.sh`, on the app's own profile (`/storage/.mozilla/donkey-rap-machine`) with the controller profile and prefs below. Finds Donkey through `$DONKEY_HOME`, the `Donkey.sh` port entry, or `/storage/apps/donkey`. Cleans up and restores the rings on exit; Donkey puts the controller back. |
+| `rap-machine.yaml` | InputPlumber profile: which button sends which key. Donkey loads it for the whole session. |
+| `rap-machine.prefs` | Firefox prefs for the app's profile: Web Audio may start without a tap (so ssh can drive the page), and the mic is allowed without a prompt. |
 | `Rap Machine.sh`, `Rap Machine + Gemma.sh` | The ROCKNIX port entries (under Ports in EmulationStation); the second one also starts Gemma and Pocket TTS for the MC mode. |
-| `install.sh [host]` | Copies all of it over ssh (default host `flip2-12g`), grants the mic, adds the ports to `gamelist.xml`. EmulationStation shows them after a game list refresh (Start → Game Settings → Update Gamelists) or a restart. |
+| `install.sh [host]` | Checks that Donkey is installed, copies all of it over ssh (default host `flip2-12g`) and adds the ports to `gamelist.xml`. EmulationStation shows them after a game list refresh (Start → Game Settings → Update Gamelists) or a restart. |
 
 Open with `?flip` and the page zooms itself to a 960-px-wide layout for the 5.5" 1920×1080 panel and shows one view at a time: **Pattern**, **Booth**, **Pads**, **Mix**, **MC** (`&view=booth` opens on a given view). The touchscreen works everywhere; the controller does the performing:
 

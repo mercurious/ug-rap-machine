@@ -1,6 +1,7 @@
-# InputPlumber profile for the Underground Rap Machine in Firefox on the Retroid Pocket Flip 2.
-# flip2/launch.sh loads it once Firefox is up. Every control is a single key the page handles
-# (see the README); InputPlumber profiles have no chords, so each button does one thing.
+# InputPlumber profile for the Underground Rap Machine in Donkey on the Retroid Pocket Flip 2.
+# flip2/launch.sh hands it to Donkey (DONKEY_CONTROLLER), which loads it for the whole session.
+# Every control is a single key the page handles (see the README); InputPlumber profiles have no
+# chords, so each button does one thing.
 #
 #   A B X Y            pads 1–4            d-pad ↑ → ↓ ←      pads 5–8
 #   Start              play / stop         Select             generate a new beat
@@ -9,7 +10,7 @@
 #   L3 (press stick)   mic on / off        R3 (press stick)   record a take
 #   L2 (hold)          low-pass filter sweep
 #   right stick + R2   pointer and tap, for anything else on screen (the touchscreen works too)
-#   Guide (Home)       leave Firefox (the house F9 binding)
+#   Guide (Home)       leave the app (KeyF23, Donkey's exit binding)
 version: 1
 kind: DeviceProfile
 name: Rap Machine
@@ -187,9 +188,9 @@ mapping:
     target_events:
       - keyboard: KeyG
 
-  - name: Exit Firefox
+  - name: Exit
     source_event:
       gamepad:
         button: Guide
     target_events:
-      - keyboard: KeyF9
+      - keyboard: KeyF23
