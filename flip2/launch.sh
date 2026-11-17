@@ -13,7 +13,7 @@
 #   URM_SYNC=auto URM_SYNC_PORT=5150 Wi-Fi sync with HI5, Jaffedrone and fliptribe (HI5S; off|auto|lead|follow, port 0 = off)
 
 [ -f /etc/profile ] && . /etc/profile >/dev/null 2>&1
-APP=/storage/apps/rap-machine
+APP=$(cd "$(dirname "$0")" && pwd)   # the home it runs from: /storage/apps/rap-machine or a portmart apps root
 PORT=${URM_PORT:-8766}
 LOG=$APP/logs/launch.log
 mkdir -p "$APP/logs"
