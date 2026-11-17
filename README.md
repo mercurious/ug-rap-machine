@@ -2,6 +2,8 @@
 
 A single-file browser instrument for underground rap. It generates the beat and samples, then runs live auto-tune on your microphone so you can perform over it. No samples are downloaded — every sound is synthesized in the browser with the Web Audio API.
 
+![Underground Rap Machine: beat grid, chord pads and vocal booth](screenshot.png)
+
 ## Run it
 
 The mic only works on a secure page, so serve the folder from localhost rather than opening the file directly:
